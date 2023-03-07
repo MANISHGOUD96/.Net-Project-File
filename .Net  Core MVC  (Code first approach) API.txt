@@ -1,0 +1,1059 @@
+﻿//----------------------------API-------------------------
+//--------------------Employee Model (API)---------------
+
+using System.ComponentModel.DataAnnotations;
+
+namespace Mk_Core_Web_API.DB_Connection
+{
+    public class Employee
+    {
+        [Key]
+        [Required]
+        public int Id { get; set; }
+        [Required]
+        public string? Name { get; set; }
+        [Required]
+        public string? Age { get; set; }
+        public DateTime Date { get; set; }
+        [Required]
+        public string? Email { get; set; }
+        [Required]
+        public string? Phone { get; set; }
+        [Required]
+        public string? Address { get; set; }
+        [Required]
+        public string? ZipCode { get; set; }
+        [Required]
+        public string? Company { get; set; }
+        [Required]
+        public string? City { get; set; }
+        [Required]
+        public string? Department { get; set; }
+        [Required]
+        public int Selary { get; set; }
+    }
+}
+
+//---------------------Login Model (API)------------------
+
+using System.ComponentModel.DataAnnotations;
+
+namespace Mk_Core_Web_API.DB_Connection
+{
+    public class Login
+    {
+        [Key]
+        [Required]
+        public int Id { get; set; }
+        [Required]
+        public string? Name { get; set; }
+        [Required]
+        public string? Email { get; set; }
+        [Required]
+        public string? password { get; set; }
+
+    }
+}
+
+//------------------------------Table Connection----------------------------
+
+using Microsoft.EntityFrameworkCore;
+using Mk_Core_Web_API.DB_Connection;
+
+namespace Mk_Core_Web_API.DB_Connection
+{
+   
+        public class Table : DbContext
+        {
+            public Table(DbContextOptions<Table> options) : base(options)
+            {
+
+            }
+            public DbSet<Employee> Employees { get; set; }
+           public DbSet<Login> Logins { get; set; }
+        }
+    
+}
+
+//-------------------------------API Controller(Emp)-----------------------
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Mk_Core_Web_API.DB_Connection;
+using System.Net;
+using Table = Mk_Core_Web_API.DB_Connection.Table;
+
+namespace Mk_Core_Web_API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ManishController : ControllerBase
+    {
+        private readonly DB_Connection.Table _DB;
+        public ManishController(Table DB)
+        {
+            _DB = DB;
+        }
+
+        //---------------Read Method-----------------
+
+        [HttpGet]
+        [Route("Api/GetAllData")]
+        public List<Employee> GetData()
+        {
+            var obj = _DB.Employees.ToList();
+            return obj;
+        }
+
+        //---------------Delete Method-----------------
+
+        [HttpGet]
+        [Route("Api/DeleteData")]
+
+        public HttpResponseMessage Delete(int id)
+        {
+            var resdelete = _DB.Employees.Where(a => a.Id == id).First();
+            _DB.Employees.Remove(resdelete);
+            _DB.SaveChanges();
+            HttpResponseMessage res = new HttpResponseMessage(HttpStatusCode.OK);
+            return res;
+        }
+
+        //---------------Add Method-----------------
+
+        [HttpPost]
+        [Route("Api/AddData")]
+        public HttpResponseMessage AddEmp(Employee obj)
+        {
+            if (obj.Id == 0)
+            {
+                _DB.Employees.Add(obj);
+                _DB.SaveChanges();
+            }
+            else
+            {
+                _DB.Entry(obj).State = Microsoft.EntityFrameworkCore.EntityState.Modified; 
+                _DB.SaveChanges();
+            }
+            HttpResponseMessage res = new HttpResponseMessage(HttpStatusCode.OK);
+            return res;
+        }
+
+        //---------------Edit Method-----------------
+
+        [HttpGet]
+        [Route("Api/EditData")]
+        public Employee EditData(int id)
+        {
+            var resedit = _DB.Employees.Where(a => a.Id == id).First();
+            return resedit;
+        }
+
+        //---------------Login Method-----------------
+
+        [HttpPost]
+        [Route("Api/Login")]
+        public string Login(string Email,string password)
+        {
+            var userlog=_DB.Logins.Where(a=>a.Email == Email).FirstOrDefault();
+            if (userlog == null)
+            {
+                string res = "no";
+                return res;
+            }
+            else
+            {
+                if(Email==userlog.Email&& password == userlog.password)
+                {
+                    string res = "Yes";
+                    return res;
+                }
+                else
+                {
+                    string res = "Not Login";
+                    return res;
+                }
+            }
+        }
+
+    }
+}
+
+//-------------------------------API Controller Login-----------------------
+
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Mk_Core_Web_API.DB_Connection;
+using System.Net;
+
+namespace Mk_Core_Web_API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class LoginController : ControllerBase
+    {
+        private readonly DB_Connection.Table _DB;
+        public LoginController(Table DB)
+        {
+            _DB = DB;
+        }
+
+        //---------------Read Method-----------------
+
+        [HttpGet]
+        [Route("Api/GetloginData")]
+        public List<Login> logindata()
+        {
+            var obj = _DB.Logins.ToList();
+            return obj;
+        }
+
+        //---------------Delete Method-----------------
+
+
+        [HttpGet]
+        [Route("Api/DeleteData")]
+        public HttpResponseMessage Delete(int id)
+        {
+            var resdelete = _DB.Logins.Where(a => a.Id == id).First();
+            _DB.Logins.Remove(resdelete);
+            _DB.SaveChanges();
+            HttpResponseMessage res = new HttpResponseMessage(HttpStatusCode.OK);
+            return res;
+        }
+
+        //---------------Add & Edit Method-----------------
+
+
+        [HttpPost]
+        [Route("Api/EditLoginData")]
+        public string LoginData(Login obj)
+        {
+            var log = _DB.Logins.Where(a => a.Email == obj.Email).FirstOrDefault();
+
+            if (log != null)
+            {
+                var oldpass = log.password;
+                log.password = obj.password;
+
+                if (log.Email == obj.Email && oldpass == obj.password)
+                {
+                    return "no";
+                }
+           
+                else
+                {
+                    _DB.Entry(log).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                    _DB.SaveChanges();
+                    return "Nopass";
+
+                }
+            }
+            else
+            {
+                var yes = _DB.Logins.Add(obj).ToString();
+                _DB.SaveChanges();
+                return yes;
+            }
+        }
+    }
+}
+
+
+//---------------------------MVC------------------------------------
+
+
+//------------------------Controller--------------------------------
+
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Mk_Core_API_MVC.Models;
+using Newtonsoft.Json;
+using NuGet.Protocol.Plugins;
+using System.Diagnostics;
+using System.Security.Claims;
+
+namespace Mk_Core_API_MVC.Controllers
+{
+    [Authorize]
+    public class HomeController : Controller
+    {
+        private readonly ILogger<HomeController> _logger;
+
+        public HomeController(ILogger<HomeController> logger)
+        {
+            _logger = logger;
+        }
+
+       
+   //---------------Read Data Table---------------------
+
+        public IActionResult Index()
+        {
+            // 4th Step of using Session
+            HttpContext.Session.SetString("Name", "MVC-Core Third Projact Using API");
+            // 5th step of using Session
+            var ses = HttpContext.Session.GetString("Name");
+
+            HttpClient client = new HttpClient();
+            var data = client.GetAsync("http://localhost:5213/api/Manish/Api/GetAllData").Result;
+            var readdata = data.Content.ReadAsStringAsync().Result;
+            var empres = JsonConvert.DeserializeObject<List<EmpModel>>(readdata);
+            return View(empres);
+        }
+
+        //---------------Add Data in Table---------------------
+
+        [HttpGet]
+        public IActionResult AddEmp()
+        {
+            return View();
+        }
+
+        [ValidateAntiForgeryToken]
+        [HttpPost]
+        public IActionResult AddEmp(EmpModel obj)
+        {
+            HttpClient client = new HttpClient();
+            var data = JsonConvert.SerializeObject(obj);
+            StringContent postdata = new StringContent(data, System.Text.Encoding.UTF8, "application/json");
+            var result = client.PostAsync("http://localhost:5213/api/Manish/Api/AddData", postdata).Result;
+            return RedirectToAction("Index");
+        }
+
+        //---------------Delete Employee Method---------------------
+
+        public IActionResult Delete(int Id)
+        {
+            HttpClient client = new HttpClient();
+            var result = client.GetAsync("http://localhost:5213/api/Manish/Api/DeleteData" + "?Id=" + Id).Result;
+            return RedirectToAction("Index");
+        }
+
+        //---------------Edit Employee Method---------------------
+
+        public IActionResult Edit(int Id)
+        {
+            HttpClient client = new HttpClient();
+            var result = client.GetAsync("http://localhost:5213/api/Manish/Api/EditData" + "?Id=" + Id).Result;
+            var data = result.Content.ReadAsStringAsync().Result;
+            var objdata = JsonConvert.DeserializeObject<EmpModel>(data);
+            return View("AddEmp", objdata);
+        }
+
+        //---------------Login Method---------------------
+        
+       
+        [AllowAnonymous]
+        [HttpGet]
+
+        public IActionResult login()
+        {
+            return View();
+        }
+
+        [ValidateAntiForgeryToken]
+        [AllowAnonymous]
+        [HttpPost]
+
+        public IActionResult login(login obj)
+        {
+            HttpClient client = new HttpClient();
+            var dsta = JsonConvert.SerializeObject(obj);
+            StringContent post =new StringContent(dsta,System.Text.Encoding.UTF8, "application/json");
+            var res = client.PostAsync("http://localhost:5213/api/Manish/Api/Login"+"?Email="+obj.Email+"&Password="+obj.password, post).Result;
+            var redda = res.Content.ReadAsStringAsync().Result;
+
+            if (redda == "no")
+            {
+                TempData["Invalid Email"] = "Email Not Found..............";
+               
+                return RedirectToAction("Index");
+            }
+            else
+            {
+                if (redda == "Yes")
+                {
+                    // Step-1 for Auth
+                    var Claims = new[]{ new Claim(ClaimTypes.Name, obj.Email),
+                                        new Claim(ClaimTypes.Email, obj.password)};
+                    // Step-2 for Auth
+                    var identity = new ClaimsIdentity(Claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                    var authProperties = new AuthenticationProperties
+                    {
+                        IsPersistent = true
+                    };
+                    // Step-3 for Auth
+                    HttpContext.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        new ClaimsPrincipal(identity),
+                        authProperties);
+
+                    HttpContext.Session.SetString("Email",obj.Email);
+                    HttpContext.Session.GetString("Email");
+
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    TempData["Invalid Password"] = "Password is Invalid........... ";
+                }
+                return View();
+            }
+        }
+
+        //----------------LogOut Method-----------------------
+        public IActionResult LogOut()
+        {
+            HttpContext.SignOutAsync(null, null);
+            HttpContext.Session.Clear();
+            return View("login");
+        }
+
+
+        //---------------Regestraiton Form---------------------
+
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult Regestration()
+        {
+            return View();
+        }
+
+        [ValidateAntiForgeryToken]
+        [AllowAnonymous]
+        [HttpPost]
+        public IActionResult Regestration(login obj)
+        {
+            
+            HttpClient client = new HttpClient();
+            var data = JsonConvert.SerializeObject(obj);
+            StringContent postdata = new StringContent(data, System.Text.Encoding.UTF8, "application/json");
+            var result = client.PostAsync("http://localhost:5213/api/Login/Api/EditLoginData", postdata).Result;
+            var read=result.Content.ReadAsStringAsync().Result;
+            if (read == "no")
+            {
+                TempData["Email"] = "This Email is Already Exist.........!";
+            }
+            else
+            {
+                return RedirectToAction("login");
+            }
+            return View();
+        }
+
+        //------------------Read Login Data-------------------
+
+        
+        public IActionResult Privacy()
+        {
+            HttpClient client = new HttpClient();
+            var data = client.GetAsync("http://localhost:5213/api/Login/Api/GetloginData").Result;
+            var readdata = data.Content.ReadAsStringAsync().Result;
+            var empres = JsonConvert.DeserializeObject<List<login>>(readdata);
+            return View(empres);
+        }
+
+        //---------------Delete Login Data---------------------
+        public IActionResult DeleteLogin(int Id)
+        {
+            HttpClient client = new HttpClient();
+            var result = client.GetAsync("http://localhost:5213/api/Login/Api/DeleteData" + "?Id=" + Id).Result;
+            return RedirectToAction("Privacy");
+        }
+
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+    }
+}
+
+//----------------------------------------View--------------------------------------------
+//------------------------------------Table Data------------------------------------------
+
+@model List<Mk_Core_API_MVC.Models.EmpModel>
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<style>
+     body{
+        background-color:darkslategray
+    }
+    
+    .mk{
+        border:2px solid black;
+    }
+    .th{
+        background-color:hotpink
+    }
+    .tr{
+        background-color:lemonchiffon
+    }
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js">
+</script>
+<script>
+    $(document).ready(function () {
+        alert("You want to enter in page");
+        $("tr:odd").css("background-color", "skyblue")
+        
+        $(".ab").click(function () {
+            alert("You Want to Edit Record");
+        });
+
+        $(".ac").click(function () {
+            alert("You Sure to Delete this Record");
+        });
+
+        $(".ab").mouseenter(function(){
+            $("tr:Even").css("background-color", "greenyellow")
+            $("tr:odd").css("background-color", "lemonchiffon")
+        });
+        $(".ac").mouseenter(function () {
+            $("tr:odd").css("background-color", "lightcyan")
+            $("tr:Even").css("background-color", "lightgreen")
+        });
+    });
+</script>
+
+<a class="btn btn-primary" href="AddEmp">AddNewEmployee</a>
+
+<partial name="Session">
+
+    <h1 style="color:antiquewhite"><u>Employee Details:-</u></h1>
+    @Html.AntiForgeryToken()
+    <table class="table table-bordered table-hover table-responsive mk">
+        <tr class="th">
+        <th>Id</th>
+        <th>Name</th>
+        <th>Age </th>
+        <th>DOB</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Address</th>
+        <th>ZipCode</th>
+        <th>Company</th>
+        <th>City</th>
+        <th>Department</th>                        
+        <th>Selary</th>
+        <th>Edit</th>
+        <th>Delete</th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr class="tr">
+            <td>@item.Id</td>
+            <td>@item.Name</td>
+            <td>@item.Age</td>
+            <td>@item.Date.Date.ToShortDateString()</td>
+            <td>@item.Email</td>
+            <td>@item.Phone</td>
+            <td>@item.Address</td>
+            <td>@item.ZipCode</td>
+            <td>@item.Company</td>
+            <td>@item.City</td>
+            <td>@item.Department</td>
+            <td>@item.Selary</td>
+            <td><a class="btn btn-success ab" asp-action="Edit" asp-controller="Home" asp-route-Id="@item.Id ">Edit</a></td>
+            <td><a class="btn btn-danger ac" asp-action="Delete" asp-controller="Home" asp-route-Id="@item.Id ">Delete</a></td>
+        </tr>
+    }
+</table>
+    
+//-----------------------------------Add Employee------------------------------------------
+
+@model Mk_Core_API_MVC.Models.EmpModel
+@{
+    ViewData["Title"] = "AddEmp";
+}
+
+<style>
+    body {
+        background: url('@Url.Content("~/css/image/images.jpg")');
+        background-size: 1750px,10px;
+         /*background-color:cornflowerblue;*/
+    }
+
+    .back {
+       background: url('@Url.Content("~/css/image/pic3.jpg")');
+        /*background-color:aqua;*/
+    }
+
+    .Mk {
+        border: 2Px solid black;
+        width: 30%;
+    }
+
+    .sk {
+        border: 2Px solid black;
+        background-color:greenyellow;
+    }
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js">
+</script>
+<script>
+    $(document).ready(function () {
+        alert("You want to enter in page");
+
+        $("input").focus(function () {
+            $(this).css("background-color", "orchid")
+            $('h5').show();
+        }); 
+
+        $("input").blur(function () {
+            $(this).css("background-color", "plum")
+            });
+            
+        $("button").click(function () {
+            alert("You want to Submit form");
+        });
+    });
+</script>
+
+<center><partial name="Session"></center><
+
+    <section class="vh-100">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <div class="card shadow-2-strong" style="border-radius: 1rem; background-color:lightgreen">
+                    <div class="card-body p-5 text-center">
+
+                        <h1 class="mb-5" style="background-color:lightcyan"><b>Add Employee</b></h1>
+                        <hr>
+                          @Html.AntiForgeryToken()
+                            <form class="back" asp-action="AddEmp" asp-controller="Home" method="post">
+
+                                <input asp-for="Id" type="hidden" />
+
+                                <div class="form-group">
+                                <h5 style="text-align:left"><label>Name</label></h5>
+                                    <input asp-for="Name" class="form-control" type="text" />
+                                    <span class="text-danger" asp-validation-for="Name"></span>
+                                </div>
+
+                                <div class="form-group ">
+                                <h5 style="text-align:left"><label>Age</label></h5>
+                                    <input asp-for="Age" class="form-control" type="text" />
+                                    <span class="text-danger" asp-validation-for="Age"></span>
+                                </div>
+
+                                <div class="form-group ">
+                                <h5 style="text-align:left"><label>DOB</label></h5>
+                                    <input asp-for="Date" class="form-control type="date" />
+                                </div>
+
+                                <div class="form-group ">
+                                <h5 style="text-align:left"><label>Email</label></h5>
+                                    <input asp-for="Email" class="form-control type="text" />
+                                    <span class="text-danger" asp-validation-for="Email"></span>
+                                </div>
+
+                                <div class="form-group ">
+                                <h5 style="text-align:left"><label>Phone</label></h5>
+                                    <input asp-for="Phone" class="form-control type="text" />
+                                    <span class="text-danger" asp-validation-for="Phone"></span>
+                                </div>
+
+                                <div class="form-group ">
+                                <h5 style="text-align:left"><label>Address</label></h5>
+                                    <input asp-for="Address" class="form-control type="text" />
+                                    <span class="text-danger" asp-validation-for="Address"></span>
+                                </div>
+
+                                <div class="form-group ">
+                                <h5 style="text-align:left"><label>ZipCode</label></h5>
+                                    <input asp-for="ZipCode" class="form-control type="text" />
+                                    <span class="text-danger" asp-validation-for="ZipCode"></span>
+                                </div>
+
+                                <div class="form-group ">
+                                <h5 style="text-align:left"><label>Company</label></h5>
+                                    <input asp-for="Company" class="form-control type="text" />
+                                    <span class="text-danger" asp-validation-for="Company"></span>
+                                </div>
+
+                                <div class="form-group ">
+                                <h5 style="text-align:left"><label>City</label></h5>
+                                    <input asp-for="City" class="form-control type="text" />
+                                    <span class="text-danger" asp-validation-for="City"></span>
+                                </div>
+
+                                <div class="form-group ">
+                                <h5 style="text-align:left"> <label>Department</label></h5>
+                                    <input asp-for="Department" class="form-control type="text" />
+                                    <span class="text-danger" asp-validation-for="Department"></span>
+                                </div>
+
+                                <div class="form-group">
+                                <h5 style="text-align:left"><label>Selary</label></h5>
+                                    <input asp-for="Selary" class="form-control type="text" />
+                                    <span class="text-danger" asp-validation-for="Selary"></span>
+                                </div>
+
+                                <center>
+                                    <button class="btn btn-success" type="submit">Submit Form</button>
+                                    <button class="btn btn-danger" type="reset">Reset</button>
+                                </center>
+
+                            </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+//----------------------------------------Login Table--------------------------------------
+
+@model List<Mk_Core_API_MVC.Models.login>
+
+@{
+    ViewData["Title"] = "Privacy Policy";
+}
+<style>
+    body {
+        background: url('@Url.Content("~/css/image/mk3.jpg")');
+        background-size: 2150px,10px;
+    }
+
+    .mk {
+        border: 2px solid black;
+    }
+
+    .th {
+        background-color:darkolivegreen
+    }
+
+    .tr {
+        background-color:darksalmon;
+    }
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js">
+</script>
+<script>
+    $(document).ready(function () {
+        alert("You want to enter in page");
+        $("tr:odd").css("background-color", "skyblue")
+
+        $(".ab").click(function () {
+            alert("You Want to Edit Record");
+        });
+
+        $(".ac").click(function () {
+            alert("You Sure to Delete this Record");
+        });
+        $(".ac").mouseenter(function () {
+            $("tr:odd").css("background-color", "pink")
+            $("tr:Even").css("background-color", "palegreen")
+        });
+    });
+</script>
+
+<partial name="Session">
+
+<h1 ><u>Login Details:-</u></h1>
+@Html.AntiForgeryToken()
+<table class="table table-bordered table-hover table-responsive mk">
+<tr class="th">
+    <th>Id</th>
+    <th>Name</th>
+    <th>Email</th>
+    <th>Password</th>
+    <th>Delete</th>
+</tr>
+
+@foreach (var item in Model)
+{
+    <tr class="tr">
+        <td>@item.Id</td>
+        <td>@item.Name</td>
+        <td>@item.Email</td>
+        <td>@item.password</td>
+        <td><a class="btn btn-danger ac" asp-action="DeleteLogin" asp-controller="Home" asp-route-Id="@item.Id ">Delete</a></td>
+    </tr>
+}
+</table>
+
+//---------------------------------Login Form---------------------------------------
+
+
+@model Mk_Core_API_MVC.Models.login
+
+
+@{
+    ViewBag.Title = "login";
+}
+<style>
+   .mk{
+        background: url('@Url.Content("~/css/image/pic2.jpg")');
+        background-size: 1500px,100px;
+       
+    }
+    body{
+        background-color:mediumseagreen;
+    }
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js">
+</script>
+<script>
+    $(document).ready(function() {
+      alert("You want to enter in page");
+
+    $("input").focus(function(){
+        $(this).css("background-color", "yellow")
+        $('h5').show();
+    });
+
+    $("input").blur(function () {
+        $(this).css("background-color", "pink")
+    });
+
+    $("button").click(function(){
+      alert("You want to login");
+    });
+    });
+</script>
+
+<section class="vh-100  mk" >
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5" >
+                <div class="card shadow-2-strong" style="border-radius: 1rem; background-color:blanchedalmond">
+                    <div class="card-body p-5 text-center" >
+
+                            <h1 class="mb-5"><b>Sign in</b></h1>
+                       <hr>
+                        @Html.AntiForgeryToken()
+                        <form asp-action="Login" asp-controller="Home" method="post">
+                            <div class="form-group">
+                                <h4 style="text-align:left"><label>Email</label></h4>
+                                <input asp-for="Email" class="form-control" type="text" />
+                                <span class="text-danger" asp-validation-for="Email"></span>
+                                <h6 style="color:red">@TempData["Invalid Email"]</h6>
+                            </div>
+
+                            <div class="form-group">
+                                <h4 style="text-align:left"><label>Password</label></h4>
+                                <input asp-for="password" class="form-control" type="password" />
+                                <span class="text-danger" asp-validation-for="password"></span>
+                                <h6 style="color:red">@TempData["Invalid Password"]</h6>
+                            </div>
+
+                        <!-- Checkbox -->
+                        <div class="form-check d-flex justify-content-start mb-4">
+                            <input class="form-check-input" type="checkbox" value="" id="form1Example3" />
+                                <label class="form-check-label" for="form1Example3"><b>Remember password </b> </label>
+                        </div>
+
+                        <button class="btn btn-primary btn-lg btn-block" type="submit">Login</button>
+                        <td><a class="btn btn-link" asp-action="Regestration" asp-controller="Home">ForgetPassword</a></td>
+                        <H3>RegestrationFirst</H3>
+                        <a class="btn btn-link" asp-action="Regestration" asp-controller="Home">ClickHearForRegestration </a>
+                            
+                       </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery/dist/jquery.js"></script>
+
+//-------------------------------------Regestration Form--------------------------
+
+@model Mk_Core_API_MVC.Models.login
+
+@{
+    ViewBag.Title = "Regestration";
+    
+}
+
+<style>
+    body {
+        background: url('@Url.Content("~/css/image/mk.jpg")');
+        background-size: 1500px,10px;
+        /*background-color:cornflowerblue;*/
+    }
+
+    .back {
+        background: url('@Url.Content("~/css/image/pic3.jpg")');
+        /*background-color:aqua;*/
+    }
+    .sk {
+        border: 2Px solid black;
+        background-color: greenyellow;
+    }
+
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js">
+</script>
+<script>
+    $(document).ready(function(){
+      alert("You want to enter in page");
+
+    $("input").focus(function(){
+            $(this).css("background-color", "mediumpurple")
+        $('h5').show();
+    });
+        
+    $("input").blur(function (){
+            $(this).css("background-color", "darksalmon")
+    });
+
+    $("button").click(function(){
+      alert("You want to Submit");
+    });
+    });
+</script>
+
+<section class="vh-100">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <div class="card shadow-2-strong" style="border-radius: 1rem; background-color:lightblue">
+                    <div class="card-body p-5 text-center">
+
+                        <h1 class="mb-5" style="background-color:greenyellow"><b>Regestration Page</b></h1>
+                        <hr>
+                           @Html.AntiForgeryToken()
+                           <form class="back" asp-action="Regestration" asp-controller="Home" method="post">
+
+                            <div class="form-group">
+                                <h4 style ="text-align:left"><label>Name</label></h4>
+                                <input asp-for="Name" class="form-control" type="text" />
+                                <span class="text-danger" asp-validation-for="Name"></span>
+                            </div>
+
+                            <div class="form-group ">
+                                <h4 style="text-align:left"><label>Email</label></h4>
+                                <input asp-for="Email" class="form-control" type="text" />
+                                <span class="text-danger" asp-validation-for="Email"></span>
+                                <h6 style="color:red">@TempData["Email"]</h6>
+                            </div>
+
+                            <div class="form-group ">
+                                <h4 style="text-align:left"><label>Password</label></h4>
+                                <input asp-for="password" class="form-control" type="password" />
+                                <span class="text-danger" asp-validation-for="password"></span>
+                            </div>
+                            <br>
+                            <button class="btn btn-primary btn-lg btn-block" type="submit">Regestration</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+//---------------------------------Layout-----------------------------
+
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="btn btn-light text-dark" asp-area="" asp-controller="Home" asp-action="Index">EmployeeTable</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-info text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">LoginTable</a>
+                        </li>
+                         <li class="nav-item">
+                            <a class="btn btn-warning text-dark" asp-area="" asp-controller="Home" asp-action="AddEmp">AddNewEmployee</a>
+                        </li>
+                        @if (HttpContextAccessor.HttpContext.Session.GetString("Email") == null)
+                        {
+                            <li class="nav-item">
+                                <a class="btn btn-success text-dark" asp-area="" asp-controller="Home" asp-action="Login">Login</a>
+                            </li>
+                        }
+
+                        @if (HttpContextAccessor.HttpContext.Session.GetString("Email") != null)
+                        {
+                            <li class="nav-item">
+                                <a class="btn btn-danger text-dark" asp-area="" asp-controller="Home" asp-action="LogOut">LogOut</a>
+                            </li>
+                        }
+                    </ul>
+                    <h5>@HttpContextAccessor.HttpContext.Session.GetString("Email")</h5>
+                </div>
+
+//--------------------------------------Session----------------------
+
+
+<!--7th Step of using Session-->
+@using Microsoft.AspNetCore.Http
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+<!--There Use Session-->
+<h4 style="color:cyan">@HttpContextAccessor.HttpContext.Session.GetString("Name")</h4>
+
+//-----------------------------------Progarm.cs----------------------------
+
+using Microsoft.AspNetCore.Authentication.Cookies;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllersWithViews();
+
+// For login Authentication
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).
+    AddCookie(o => {
+        o.LoginPath = new PathString("/Home/Login");
+        o.AccessDeniedPath = new PathString("/Home/Login");
+    });
+
+// 3rd step of Using Session
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+builder.Services.AddSession();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+}
+app.UseStaticFiles();
+
+// Step of Using Session
+//  1st-step (Inastal Pacakeg-Microsoft.AspNetCore.Session 2.2)
+//  2nd-step
+app.UseSession();
+
+app.UseRouting();
+
+// For login Authentication
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Login}/{id?}");
+
+app.Run();

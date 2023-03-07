@@ -1,0 +1,6 @@
+Add table:-
+
+PM> Scaffold-DbContext "Server=CHETUIWK1356\SQL2019;Database=rev;Trusted_Connection=True;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Data_Connection
+
+Add one more table:-
+Scaffold-DbContext "Server=CHETUIWK1356\SQL2019;Database=rev;Trusted_Connection=True;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Data_Connection -f

@@ -1,0 +1,558 @@
+﻿//---------------------------Employee Model--------------------------
+
+using System.ComponentModel.DataAnnotations;
+
+namespace MK_Core_MVC.Models
+{
+    public class Employee
+    {
+        [Key]
+        [Required]
+        public int Id { get; set; }
+        [Required]
+        public string? Name { get; set; }
+        [Required]
+        public string? Age { get; set; }
+        public DateTime Date { get; set; }
+        [Required]
+        public string? Email { get; set; }
+        [Required]
+        public string? Phone { get; set; }
+        [Required]
+        public string? Address { get; set; }
+        [Required]
+        public string? ZipCode { get; set; }
+        [Required]
+        public string? Company { get; set; }
+        [Required]
+        public string? City { get; set; }
+        [Required]
+        public string? Department { get; set; }
+
+        [Required]
+        public int Selary { get; set; }
+
+    }
+}
+
+//-----------------------------Login Model-----------------------
+
+using System.ComponentModel.DataAnnotations;
+
+namespace MK_Core_MVC.Models
+{
+    public class Login
+    {
+        [Key]
+        [Required]
+        public int Id { get; set; }
+        [Required]
+        public string? Name { get; set; }
+        [Required]
+        public string? Email { get; set; }
+        [Required]
+        public string? password { get; set; }
+    }
+}
+
+
+//----------------------------Table Connection----------------------
+
+using Microsoft.EntityFrameworkCore;
+using MK_Core_MVC.Models;
+
+namespace MK_Core_MVC.DB_Connection
+{
+    public class Table:DbContext
+    {
+        public Table(DbContextOptions<Table> options):base(options)
+        {
+
+        }
+        public DbSet<Employee> Employees{ get; set; }
+        public DbSet<Login> Logins { get; set; }
+    }
+}
+
+//----------------------------------Controller----------------------------------------
+
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using MK_Core_MVC.DB_Connection;
+using MK_Core_MVC.Migrations;
+using MK_Core_MVC.Models;
+using System.Diagnostics;
+using System.Security.Claims;
+
+namespace MK_Core_MVC.Controllers
+{
+    [Authorize]
+    public class HomeController : Controller
+    {
+        //-----------------------Declare database-----------------------
+
+        private readonly Table _DB;
+        public HomeController(Table DB)
+        {
+            _DB = DB;
+        }
+
+        //-------------------Read the value of Table-------------------
+        public IActionResult Index()
+        {
+            var res= _DB.Employees.ToList();
+
+            // 4th Step of using Session
+            HttpContext.Session.SetString("Name", "MVC-Core First Projact");
+            // 5th step of using Session
+            var ses=HttpContext.Session.GetString("Name");
+
+            return View(res);
+        }
+
+        //-------------------Insert value in Table---------------------
+
+        [HttpGet]
+        public IActionResult AddEmp()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult AddEmp(Employee obj)
+        {
+            if (obj.Id == 0)
+            {
+                _DB.Employees.Add(obj);
+                _DB.SaveChanges();
+            }
+            else
+            {
+                _DB.Employees.Update(obj);
+                _DB.SaveChanges();  
+            }
+            return RedirectToAction("Index");
+        }
+
+        //-------------------Edit table value--------------------
+
+        public IActionResult Edit(int Id)
+        {
+            var resEdit = _DB.Employees.Where(a => a.Id == Id).FirstOrDefault();
+            return View("AddEmp",resEdit);
+        }
+
+        // Delete table value
+        public IActionResult Delete(int Id)
+        {
+            var resdelete=_DB.Employees.Where(a=>a.Id==Id).First();
+            _DB.Employees.Remove(resdelete);
+            _DB.SaveChanges();  
+            return RedirectToAction("Index");
+        }
+
+        //--------------------Login Method---------------------
+
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult Login()
+        {
+            return View();
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        public IActionResult Login(Login obj)
+        {
+            var val=_DB.Logins.Where(m=>m.Email==obj.Email).FirstOrDefault();
+            if (val==null)
+            {
+                HttpContext.Session.SetString("Email", "Email is Invalid................!");
+                HttpContext.Session.GetString("Email");
+            }
+            else
+            {
+                if (val.Email == obj.Email && val.password == obj.password)
+                {
+                    // Step-1 for Auth
+                    var Claims = new[]{ new Claim(ClaimTypes.Name, val.Email), 
+                                        new Claim(ClaimTypes.Email,val.password)};
+                    // Step-2 for Auth
+                    var identity =new ClaimsIdentity(Claims,CookieAuthenticationDefaults.AuthenticationScheme);
+
+                    var authProperties = new AuthenticationProperties
+                    {
+                        IsPersistent = true
+                    };
+                    // Step-3 for Auth
+                    HttpContext.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        new ClaimsPrincipal(identity), 
+                        authProperties);
+
+                    HttpContext.Session.SetString("Email", val.Email);
+                    HttpContext.Session.GetString("Email");
+
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    HttpContext.Session.SetString("Password", "Password is Invalid................!");
+                    HttpContext.Session.GetString("Password");
+                }
+            }
+            return View();
+        }
+
+        //-----------------------LogOut Method-----------------------
+
+        public IActionResult LogOut()
+        {
+            HttpContext.SignOutAsync(null, null);
+            HttpContext.Session.Clear();
+            return View("Login");
+        }
+        public IActionResult Privacy()
+        {
+            return View();
+        }
+
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+    }
+}
+
+//-------------------------------------View--------------------------------
+//-------------------------------------Table-------------------------------
+
+@model List<MK_Core_MVC.Models.Employee>
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+<style>
+     body{
+        background: url('@Url.Content("~/css/image/pic4.jpg")');
+       background-size:1200px,10px 
+    }
+    
+    .mk{
+        border:2px solid black;
+    }
+    .th{
+        background-color:hotpink
+    }
+    .tr{
+        background-color:lemonchiffon
+    }
+    body{
+        background-color: darkgrey;
+    }
+</style>
+
+<partial name="Session">
+
+    <h1 style="color:antiquewhite"><u>Employee Details:-</u></h1>
+
+    <table class="table table-bordered table-hover table-responsive mk">
+        <tr class="th">
+        <th>Id</th>
+        <th>Name</th>
+        <th>Age </th>
+        <th>DOB</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Address</th>
+        <th>ZipCode</th>
+        <th>Company</th>
+        <th>City</th>
+        <th>Department</th>                        
+        <th>Selary</th>
+        <th>Edit</th>
+        <th>Delete</th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr class="tr">
+            <td>@item.Id</td>
+            <td>@item.Name</td>
+            <td>@item.Age</td>
+            <td>@item.Date.Date.ToShortDateString()</td>
+            <td>@item.Email</td>
+            <td>@item.Phone</td>
+            <td>@item.Address</td>
+            <td>@item.ZipCode</td>
+            <td>@item.Company</td>
+            <td>@item.City</td>
+            <td>@item.Department</td>
+            <td>@item.Selary</td>
+            <td><a class="btn btn-success" asp-action="Edit" asp-controller="Home" asp-route-Id="@item.Id">Edit</a></td>
+            <td><a class="btn btn-danger" asp-action="Delete" asp-controller="Home" asp-route-Id="@item.Id">Delete</a></td>
+        </tr>
+    }
+</table>
+
+
+//-----------------------------------Emp View------------------------------
+
+
+@model MK_Core_MVC.Models.Employee
+
+<style>
+    body{
+        /*background: url('@Url.Content("~/css/image/images.jpg")');
+        background-size:1830px,100px;*/
+
+        background-color:blueviolet
+    }
+    .back{
+        /*background: url('@Url.Content("~/css/image/pic3.jpg")');*/
+        background-color:darkkhaki
+    }  
+    .Mk{
+        border: 2Px solid black;
+        width:30%;
+    }   
+    .sk{
+        border: 2Px solid black;
+        background-color:lightcoral;
+    }
+</style>
+ 
+
+<partial name="Session">
+
+<div class="Mk">
+
+<div class="sk">
+<center>
+<h3><b>Add Employee</b></h3>
+</center>
+</div>
+
+<form class="back" asp-action="AddEmp" asp-controller="Home" method="post">
+
+<input asp-for="Id" type="hidden"/>
+
+<div class="form-group">
+    <h5><label>Name</label></h5>
+    <input asp-for="Name" class="form-control" type="text"  />
+    <span class="text-danger" asp-validation-for="Name"></span>
+</div>
+
+<div class="form-group ">
+    <h5><label>Age</label></h5>
+    <input asp-for="Age" class="form-control" type="text"  />
+    <span class="text-danger" asp-validation-for="Age"></span>
+</div>
+
+<div class="form-group ">
+    <h5><label>DOB</label></h5>
+    <input asp-for="Date" class="form-control  type="date" />
+</div>
+
+<div class="form-group ">
+    <h5><label>Email</label></h5>
+    <input asp-for="Email" class="form-control  type="text"  />
+    <span class="text-danger" asp-validation-for="Email"></span>
+</div>
+
+<div class="form-group ">
+    <h5><label>Phone</label></h5>
+    <input asp-for="Phone" class="form-control  type="text" />
+    <span class="text-danger" asp-validation-for="Phone"></span>
+</div>
+
+<div class="form-group ">
+    <h5><label>Address</label></h5>
+    <input asp-for="Address" class="form-control  type="text"  />
+    <span class="text-danger" asp-validation-for="Address"></span>
+</div>
+
+<div class="form-group ">
+    <h5><label>ZipCode</label></h5>
+    <input asp-for="ZipCode" class="form-control type="text"  />
+    <span class="text-danger" asp-validation-for="ZipCode"></span>
+</div>
+
+<div class="form-group ">
+    <h5><label>Company</label></h5>
+    <input asp-for="Company" class="form-control  type="text"  />
+    <span class="text-danger" asp-validation-for="Company"></span>
+</div>
+
+<div class="form-group ">
+    <h5><label>City</label></h5>
+    <input asp-for="City" class="form-control type="text"  />
+    <span class="text-danger" asp-validation-for="City"></span>
+</div>
+
+<div class="form-group ">
+    <h5> <label>Department</label></h5>
+    <input asp-for="Department" class="form-control type="text" />
+    <span class="text-danger" asp-validation-for="Department"></span>
+</div>
+
+<div class="form-group">
+    <h5><label>Selary</label></h5>
+    <input asp-for="Selary" class="form-control type="text"  />
+    <span class="text-danger" asp-validation-for="Selary"></span>
+</div>
+
+<center>
+<button class="btn btn-success" type="submit">Submit Form</button>
+<button class="btn btn-danger" type="reset">Reset</button>
+</center>
+
+</form>
+</div>
+ 
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery/dist/jquery.js"></script>
+
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+
+//-----------------------------------Login View------------------------------
+
+
+@model MK_Core_MVC.Models.Login
+@using Microsoft.AspNetCore.Http
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Login";
+}
+
+<style>
+    body{
+        background: url('@Url.Content("~/css/image/pic1.jpg")');
+        background-size:1300px,10px
+    }
+    .sk{
+        border: 2Px solid black;
+        width:30%;
+        background-color: bisque;
+    }
+</style>
+
+<partial name="Session">
+<div class="sk">
+
+<center>
+<h3><b> User Login</b></h3>
+</center>
+<hr/>
+
+<form asp-action="Login" asp-controller="Home" method="post">
+
+<div class="form-group">
+    <h5><label>Email</label></h5>
+    <input asp-for="Email" class="form-control" type="text" />
+    <span class="text-danger" asp-validation-for="Email"></span>
+    <h6 style="color:red">@HttpContextAccessor.HttpContext.Session.GetString("Email")</h6>   
+</div>
+
+<div class="form-group">
+    <h5><label>Password</label></h5>
+    <input asp-for="password" class="form-control" type="password"/>
+    <span class="text-danger" asp-validation-for="password"></span>
+    <h6 style="color:red">@HttpContextAccessor.HttpContext.Session.GetString("Password")</h6>
+</div>
+
+<center>
+<button class="btn btn-success" type="submit">Login</button>
+<button class="btn btn-danger" type="reset">Reset</button>
+</center>
+
+</form>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery/dist/jquery.js"></script>
+
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+
+//----------------------------------Program.cs file-------------------------------
+
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
+using MK_Core_MVC.DB_Connection;
+using MK_Core_MVC.Models;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllersWithViews();
+
+// For login Authentication
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).
+    AddCookie(o => {
+        o.LoginPath = new PathString("/Home/Login");
+        o.AccessDeniedPath = new PathString("/Home/Login");
+});
+
+
+// For binding table
+builder.Services.AddDbContext<Table>(options => options.UseSqlServer(
+builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// 3rd step of Using Session
+builder.Services.AddSingleton<IHttpContextAccessor,HttpContextAccessor>();
+builder.Services.AddSession();
+
+var app = builder.Build();
+
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+}
+
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+// For login Authentication
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Step of Using Session
+//  1st-step (Inastal Pacakeg-Microsoft.AspNetCore.Session 2.2)
+//  2nd-step
+app.UseSession();
+
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Login}/{id?}");
+
+app.Run();
+
+
+//------------------------------------Session Value---------------------------------------
+
+<!--7th Step of using Session-->
+
+@using Microsoft.AspNetCore.Http
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+<!--There Use Session-->
+<h4 style="color:cyan">@HttpContextAccessor.HttpContext.Session.GetString("Name")</h4>

@@ -1,0 +1,950 @@
+
+//-----------------------------Sql Table---------------------------------
+
+create database APISTRO
+use APISTRO
+--------Employee Adress Table--------
+
+Create table Emp_Adress(
+AdressId int primary key identity(200,1)
+,AdressCode varchar(10),
+Building varchar(40),
+ZipCode varchar(10)
+)s
+
+
+insert into Emp_Adress values('16','Barawa-164','274152')
+insert into Emp_Adress values('21','Belwa-84','274145')
+insert into Emp_Adress values('52','Mundra-83','274214')
+insert into Emp_Adress values('45','Laheni-54','265412')
+
+select * from Emp_Adress 
+
+--------Employee Department Table--------
+
+create table MasterDept(
+DepMId int primary key,
+DepCode varchar(20),
+DepName varchar(20)
+)
+
+insert into MasterDept values(300,'.Net-01','Development')
+insert into MasterDept values(301,'PHP-11','Development')
+insert into MasterDept values(302,'HTML/CSS 12','Front')
+insert into MasterDept values(303,'IOS','ios Development')
+
+select * from MasterDept
+
+--------Employee Datiles Table--------
+
+create table newEmp(
+Id int primary key,
+Name varchar(50),
+AdressId int foreign key references Emp_Adress(AdressId),
+Email varchar(20),
+MobileNo varchar(12),
+DepMId int foreign key references MasterDept(DepMId)
+)
+
+insert into newEmp(Id,Name,Email,MobileNo,DepMId) values
+(100,'Manish Kumar Goud','manisher@gmail.com','8545674125',300)
+insert into newEmp(Id,Name,Email,MobileNo,DepMId) values
+(101,'Abhishek Singh','singabhi@gmail.com','8451236544',301)
+insert into newEmp(Id,Name,Email,MobileNo,DepMId) values
+(102,'Narendra Kumar','narendra@gmail.com','7658458963',302)
+insert into newEmp(Id,Name,Email,MobileNo,DepMId) values
+(103,'Shubham Gupta','shubham@gmail.com','8654213542',303)
+
+update newEmp set AdressId=200 where Id=100;
+update newEmp set AdressId=201 where Id=101;
+update newEmp set AdressId=202 where Id=102;
+update newEmp set AdressId=203 where Id=103;
+
+drop table newEmp
+
+select * from newEmp 
+select * from Emp_Adress 
+select * from MasterDept
+
+--------Procedure for Read All Data--------
+
+create proc GetAllDataa
+as
+begin
+select E.Id,E.Name,E.Email,E.MobileNo,A.AdressId,A.AdressCode,A.Building,A.ZipCode,D.DepMId,D.DepCode,D.DepName
+from newEmp as E JOIN 
+Emp_Adress as A ON A.AdressId=E.AdressId
+JOIN
+MasterDept as D ON D.DepMId=E.DepMId
+end
+
+exec GetAllDataa
+
+--------Procedure for InsertValue--------
+
+ create proc InsertValue(@AdressCode varchar(10),@Building varchar(40),@ZipCode varchar(10),
+@Id int ,@Name varchar(50) ,@Email varchar(20),@MobileNo varchar(12),@DepCode varchar(20))
+as
+begin
+declare @AId int
+declare @MId int
+Insert into Emp_Adress (AdressCode,Building,ZipCode)values(@AdressCode,@Building,@ZipCode)
+select top(1) @AId=AdressId from Emp_Adress order by AdressId desc 
+select @MId=DepMId from MasterDept where DepCode=@DepCode
+Insert into newEmp (Id,Name,AdressId,Email,MobileNo,DepMId) values(@Id,@Name,@AId,@Email,@MobileNo,@MId)
+end
+
+exec InsertValue '15','RN-45','4524',107,'sss','s@gmail.com','3454','.Net-01'
+
+--------Procedure for DeleteData--------
+
+create proc DeleteData(@Id int)
+as
+begin
+declare @AId int
+select @AId=AdressId from newEmp where Id=@Id; 
+delete newEmp where Id=@Id
+delete Emp_Adress where AdressId=@AId
+end
+
+exec DeleteData 107
+
+------Get AllData WithId---------
+create Proc GetDataThrowId(@Id int)
+as
+begin
+select E.Id,E.Name,E.Email,E.MobileNo,A.AdressId,A.AdressCode,A.Building,A.ZipCode,D.DepMId,D.DepCode,D.DepName
+from newEmp as E JOIN 
+Emp_Adress as A ON A.AdressId=E.AdressId
+JOIN
+MasterDept as D ON D.DepMId=E.DepMId
+where E.Id=@Id order by E.Id
+end
+
+ exec GetDataThrowId 100
+--------Procedure for UpdateData--------
+
+alter proc updatedata(@Id int,@Name Varchar(50),@Email varchar(30),@MobileNo varchar(12),
+@AdressCode varchar(20),@Building varchar(20),@ZipCode varchar(20),
+@DepMId int, @DepCode varchar(20),@DepName varchar(20))
+as 
+begin
+declare @Addid int
+select @Addid=AdressId from newEmp where Id=@Id
+update newEmp set Name=@Name,Email=@Email,MobileNo=@MobileNo where Id=@Id
+update Emp_Adress set AdressCode=@AdressCode,Building=@Building,ZipCode=@ZipCode where AdressId=@Addid
+update MasterDept set  DepCode=@DepCode,DepName=@DepName where DepMId=@DepMId
+end
+
+exec updatedata 101,'Rohan','Rohan@gmail.com','2222354650','10','Sishva-85','452135',300,'Jmbrin','Backend'
+
+--Logien Table--
+Create table login(Id int identity(1,1) primary key,Name varchar(50),Email varchar(50),Password varchar(50))
+insert into login values('Manish Kumar Goud','manish@gmail.com','Manish@123');
+insert into login values('Sangam Singh','sangam@gmail.com','Sangam@123');
+insert into login values('Rohan Gupta','dohan@gmail.com','Rohan@123');
+insert into login values('Devid','devid@gmai.com','Devid@123');
+
+select * from login
+
+create proc userlogien(@Email varchar(50),@Password varchar(50))
+as
+begin
+select Email,Password from login where Email=@Email and Password=@Password
+end
+userlogien 'manish@gmail.com','Manish@123'
+
+create proc insertloginval(@Name varchar(50),@Email varchar(50),@Password varchar(20))
+as
+begin
+insert into login (Name,Email,Password)values(@Name,@Email,@Password)
+end
+
+exec insertloginval 'Satish Goud','satish@gmail.com','Satish@123'
+
+
+//--------------API (Procedure) Controller----------------
+
+using MK_API_Proc.DB_Connection;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Web.Http;
+
+namespace MK_API_Proc.Controllers
+{
+    public class ManishController : ApiController
+    {
+        APISTROEntities1 DB = new APISTROEntities1();
+
+        // GET: Manish
+        [HttpGet]
+        [Route("Api/GetData")]
+        public List<GetAllDataa_Result> GetData()
+        {
+            var ReadData = DB.GetAllDataa().ToList();
+            return ReadData;
+        }
+
+        [HttpPost]
+        [Route("Api/InsertData")]
+
+        public HttpResponseMessage InsertData(GetAllDataa_Result obj)
+        {
+            DB.InsertValue(obj.AdressCode, obj.Building, obj.ZipCode, obj.Id, obj.Name, obj.Email, obj.MobileNo, obj.DepCode);
+            HttpResponseMessage res = new HttpResponseMessage(HttpStatusCode.OK);
+            return res;
+        }
+
+
+        [HttpGet]
+        [Route("Api/DeleteValue")]
+
+        public HttpResponseMessage DeleteValue(int Id)
+        {
+            DB.DeleteData(Id);
+            DB.SaveChanges();
+            HttpResponseMessage res = new HttpResponseMessage(HttpStatusCode.OK);
+            return res;
+        }
+
+        [HttpGet]
+        [Route("Api/EditData")]
+
+        public GetDataThrowId_Result EditData(int Id)
+        {
+            var Data = DB.GetDataThrowId(Id).ToList();
+            return Data[0];
+        }
+
+        [HttpPost]
+        [Route("Api/EditData")]
+
+        public HttpResponseMessage EditData(GetDataThrowId_Result obj)
+        {
+            var Data = DB.updatedata(obj.Id, obj.Name, obj.Email, obj.MobileNo,obj.AdressCode, obj.Building, obj.ZipCode, obj.DepMId, obj.DepCode, obj.DepName);
+            DB.SaveChanges();
+            HttpResponseMessage res = new HttpResponseMessage(HttpStatusCode.OK);
+            return res;
+
+        }
+
+        [HttpGet]
+        [Route("Api/UserLogin")]
+        public userlogien_Result Login(string Email,string Password)
+        {
+            var res = DB.userlogien(Email,Password).FirstOrDefault();
+            return res;
+        }
+
+        [HttpPost]
+        [Route("Api/Register")]
+
+        public HttpResponseMessage Register(login obj)
+        {
+            DB.insertloginval(obj.Name, obj.Email,obj.Password);
+            HttpResponseMessage res = new HttpResponseMessage(HttpStatusCode.OK);
+            return res;
+        }
+
+    }
+}
+
+ //-----------------------Table (connection)----------------
+
+//------------------Get all data--------------------
+
+namespace MK_API_Proc.DB_Connection
+{
+    using System;
+    
+    public partial class DetAllData_Result
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string MobileNo { get; set; }
+        public string AdressCode { get; set; }
+        public string Building { get; set; }
+        public string ZipCode { get; set; }
+        public string DepCode { get; set; }
+        public string DepName { get; set; }
+    }
+}
+
+//------------------Login--------------------
+
+namespace MK_API_Proc.DB_Connection
+{
+    using System;
+    using System.Collections.Generic;
+    
+    public partial class login
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+}
+
+//-------------------MVC Controller-------------------
+
+using MK_API_Proc_MVC.Models;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Web;
+using System.Web.Mvc;
+using System.Web.Security;
+
+namespace MK_API_Proc_MVC.Controllers
+{
+    [Authorize]
+    public class HomeController : Controller
+    {
+
+
+
+
+        public ActionResult Index()
+        {
+
+            //...........1st step...........
+            HttpClient client = new HttpClient();
+
+            //...........2nd step...........
+            var data = client.GetAsync("http://localhost:53847/Api/GetData").Result;
+
+            //...........3rd step...........
+            var readdata = data.Content.ReadAsStringAsync().Result;
+
+            //.....4th Convert JSON to Class.......... 
+            var empres = JsonConvert.DeserializeObject<List<EmpModel>>(readdata);
+
+            return View(empres);
+        }
+
+        //---------------Add Data in Table---------------------
+
+        [HttpGet]
+        public ActionResult AddEmp()
+        {
+
+            return View();
+        }
+
+        [HttpPost]
+        public ActionResult AddEmp(EmpModel obj)
+        {
+            TempData["Add"] = "Add New Employee";
+            //...........1st step...........
+            HttpClient client = new HttpClient();
+            var data = JsonConvert.SerializeObject(obj);
+            StringContent postdata = new StringContent(data, System.Text.Encoding.UTF8, "application/json");
+            var result = client.PostAsync("http://localhost:53847/Api/InsertData", postdata).Result;
+            return RedirectToAction("Index");
+        }
+
+        //---------------Delete Data from Table---------------------
+        public ActionResult Delete(int Id)
+        {
+            HttpClient client = new HttpClient();
+            var result = client.GetAsync("http://localhost:53847/Api/DeleteValue" + "?Id=" + Id).Result;
+            return RedirectToAction("Index");
+        }
+
+        //---------------Edit Data from Table---------------------
+        public ActionResult Edit(int Id)
+        {
+            HttpClient client = new HttpClient();
+            var result = client.GetAsync("http://localhost:53847/Api/EditData" + "?Id=" + Id).Result;
+            var data = result.Content.ReadAsStringAsync().Result;
+            var objdata = JsonConvert.DeserializeObject<EmpModel>(data);
+            return View("Edit", objdata);
+        }
+       
+
+        [HttpPost]
+        public ActionResult Edit(EmpModel obj)
+        {
+           // TempData["Add"] = "Add New Employee";
+            //...........1st step...........
+            HttpClient client = new HttpClient();
+            var data = JsonConvert.SerializeObject(obj);
+            StringContent postdata = new StringContent(data, System.Text.Encoding.UTF8, "application/json");
+            var result = client.PostAsync("http://localhost:53847/Api/EditData", postdata).Result;
+            return RedirectToAction("Index");
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+      
+        public ActionResult login()
+        {
+            return View();
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+       
+        public ActionResult login(login obj)
+        {
+           HttpClient client = new HttpClient();
+            Session["Time"] = DateTime.Now;
+            TempData["Invalid Captcha"] = "Invald Captcha Code";
+            var result = client.GetAsync("http://localhost:53847/Api/UserLogin" + "?Email=" + obj.Email + "&Password=" + obj.Password).Result;
+            var readdata = result.Content.ReadAsStringAsync().Result;
+            var empdata = JsonConvert.DeserializeObject<login>(readdata);
+
+            if (empdata == null)
+            {
+                TempData["Invalid Email"] = "Email Not Found..............";
+                TempData["Invalid Password"] = "Password is Invalid........... ";
+                return RedirectToAction("Index");
+            }
+            else
+            {
+                FormsAuthentication.SetAuthCookie(obj.Email, false);
+                Session["Email"] = obj.Email;
+                return RedirectToAction("Index");
+                
+            }
+          
+        }
+        
+        public ActionResult LogOut()
+        {
+            TempData["LogOut"] = DateTime.Now;
+            FormsAuthentication.SignOut();
+            Session.Clear();
+            return RedirectToAction("login");
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        public ActionResult Register()
+        {
+
+            return View();
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        public ActionResult Register(login obj)
+        {
+            TempData["Add"] = "Add New Employee";
+           
+            HttpClient client = new HttpClient();
+            var data = JsonConvert.SerializeObject(obj);
+            StringContent postdata = new StringContent(data, System.Text.Encoding.UTF8, "application/json");
+            var result = client.PostAsync("http://localhost:53847/Api/Register", postdata).Result;
+            return RedirectToAction("login");
+        }
+
+        public ActionResult About()
+        {
+            ViewBag.Message = "Your application description page.";
+
+            return View();
+        }
+
+        public ActionResult Contact()
+        {
+            ViewBag.Message = "Your contact page.";
+
+            return View();
+        }
+    }
+}
+
+//-------------------------------Employee Model------------------------
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace MK_API_Proc_MVC.Models
+{
+    public class EmpModel
+    {
+        [Required]
+        public int Id { get; set; }
+        [Required]
+        public string Name { get; set; }
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+        [Required]
+        public string MobileNo { get; set; }
+        [Required]
+        public string AdressCode { get; set; }
+        [Required]
+        public string Building { get; set; }
+        [Required]
+        public string ZipCode { get; set; }
+        [Required]
+        public string DepCode { get; set; }
+        [Required]
+        public string DepName { get; set; }
+        public int AdressId { get; set; }
+        public int DepMId { get; set; }
+    }
+}
+
+//-------------------------------Login Model------------------------
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace MK_API_Proc_MVC.Models
+{
+    public class login
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+        [Required]
+        public string Password { get; set; }
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm password")]
+        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; }
+    }
+}
+
+
+//----------------------View-----------------------
+//--------------------View (Add Emp)------------------
+
+@model MK_API_Proc_MVC.Models.EmpModel
+
+@{
+    ViewBag.Title = "AddEmp";
+}
+
+<h1 class="text-center"><b><u>Fill Employee Details</u></b></h1>
+
+<style>
+    .error {
+        color: #ff0000;
+    }
+
+    body {
+        background-image: url('../../Image/images (3).jpg');
+        background-size: 500px 1px;
+    }
+
+    .mkg {
+        border: 2px solid black;
+        width: 25%;
+        background-image: url('../../Image/images (2).jpg');
+        background-size: 500px 1px;
+    }
+</style>
+
+<div class="mkg center-block">
+   
+    @using (Html.BeginForm("AddEmp", "Home", FormMethod.Post))
+    {
+
+        <div class="form-group">
+            <label>Id</label>
+            @Html.TextBoxFor(m => m.Id, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Id, "", new { @class = "error" })
+        </div>
+
+        <div class="form-group">
+            <label>Name</label>
+            @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Name, "", new { @class = "error" })
+        </div>
+
+        <div class="form-group">
+            <label>Email</label>
+            @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "error" })
+        </div>
+
+        <div class="form-group">
+            <label>Mobile</label>
+            @Html.TextBoxFor(m => m.MobileNo, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.MobileNo, "", new { @class = "error" })
+        </div>
+
+        <div class="form-group">
+            <label>AdressCode</label>
+            @Html.TextBoxFor(m => m.AdressCode, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.AdressCode, "", new { @class = "error" })
+        </div>
+
+        <div class="form-group">
+            <label>Building</label>
+            @Html.TextBoxFor(m => m.Building, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Building, "", new { @class = "error" })
+        </div>
+
+        <div class="form-group">
+            <label>ZipCode</label>
+            @Html.TextBoxFor(m => m.ZipCode, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.ZipCode, "", new { @class = "error" })
+        </div>
+
+        <div class="form-group">
+            <label>DepCode</label>
+            @Html.TextBoxFor(m => m.DepCode, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.DepCode, "", new { @class = "error" })
+        </div>
+
+        <div class="form-group">
+            <label>DepName</label>
+            @Html.TextBoxFor(m => m.DepName, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.DepName, "", new { @class = "error" })
+        </div>
+        <center>
+            <button class="btn btn-success" type="submit">Submit</button>
+            <button class="btn btn-danger" type="reset">Reset</button>
+        </center>
+        
+    }
+    </div>
+
+//----------------------------Edit Emp-----------------------------------
+
+@model MK_API_Proc_MVC.Models.EmpModel
+
+@{
+    ViewBag.Title = "Edit";
+}
+
+
+<h1 class="text-center"><b><u>Update Employee Details</u></b></h1>
+
+<style>
+    .error {
+        color: #ff0000;
+    }
+
+    body {
+        background-image: url('../../Image/images (1).jpg');
+        background-size: 1500px 1px;
+    }
+
+    .mkg {
+        border: 2px solid black;
+        width: 25%;
+        background-image: url('../../Image/images (3).jpg');
+       
+        background-size: 500px 1px;
+    }
+</style>
+
+<div class="mkg center-block">
+    @using (Html.BeginForm("Edit", "Home", FormMethod.Post))
+    {
+        // @Html.HiddenFor(m => m.Id)
+        <div class="form-group">
+            <label>Id</label>
+            @Html.TextBoxFor(m => m.Id, new { @class = "form-control" })
+        </div>
+
+        <div class="form-group">
+            <label>Name</label>
+            @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
+        </div>
+
+        <div class="form-group">
+            <label>Email</label>
+            @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+        </div>
+
+        <div class="form-group">
+            <label>Mobile</label>
+            @Html.TextBoxFor(m => m.MobileNo, new { @class = "form-control" })
+        </div>
+
+        <div class="form-group">
+            <label>AdressId</label>
+            @Html.TextBoxFor(m => m.AdressId, new { @class = "form-control" })
+        </div>
+
+        <div class="form-group">
+            <label>AdressCode</label>
+            @Html.TextBoxFor(m => m.AdressCode, new { @class = "form-control" })
+        </div>
+
+        <div class="form-group">
+            <label>Building</label>
+            @Html.TextBoxFor(m => m.Building, new { @class = "form-control" })
+        </div>
+
+        <div class="form-group">
+            <label>ZipCode</label>
+            @Html.TextBoxFor(m => m.ZipCode, new { @class = "form-control" })
+        </div>
+
+        <div class="form-group">
+            <label>DepCode</label>
+            @Html.TextBoxFor(m => m.DepCode, new { @class = "form-control" })
+        </div>
+
+        <div class="form-group">
+            <label>DepName</label>
+            @Html.TextBoxFor(m => m.DepName, new { @class = "form-control" })
+        </div>
+        <center>
+            <button class="btn btn-success" type="submit">Submit</button>
+            <button class="btn btn-danger" type="reset">Reset</button>
+        </center>
+
+    }
+    </div>
+
+
+//------------------------------Table------------------------------------
+
+@model List<MK_API_Proc_MVC.Models.EmpModel>
+
+@{
+    ViewBag.Title = "Home Page";
+}
+
+<h1><u><b>Employee Details:-</b></u></h1>
+<style>
+    body {
+        background-image: url('../../Image/download.jpg');
+        background-size: 1500px 1px;
+    }
+
+    .mkg {
+        border: 2px solid black;
+    }
+</style>
+
+<table class="table body table-bordered table-hover table-responsive bg-success mkg">
+    <tr class="bg-info mkg">
+        <th>Id</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Mobile</th>
+        <th>AdressId</th>
+        <th>AdressCode</th>
+        <th>Building</th>
+        <th>ZipCode</th>
+        <th>DepMId</th>
+        <th>DepCode</th>
+        <th>DepName</th>
+        <th>Edit</th>
+        <th>Delete</th>
+    </tr>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.Id</td>
+            <td>@item.Name</td>
+            <td>@item.Email</td>
+            <td>@item.MobileNo</td>
+            <td>@item.AdressId</td>
+            <td>@item.AdressCode</td>
+            <td>@item.Building</td>
+            <td>@item.ZipCode</td>
+            <td>@item.DepMId</td>
+            <td>@item.DepCode</td>
+            <td>@item.DepName</td>
+            <td><a class="btn btn-primary" href="@Url.Action("Edit","Home",new {item.Id})">Edit</a></td>
+            <td><a class="btn btn-danger" href="@Url.Action("Delete","Home",new {item.Id})">Delete</a></td>
+        </tr>
+    }
+
+</table>
+<a class="btn btn-warning" href="AddEmp" role="button">AddNewEmployee</a>
+
+//----------------------------Login Form------------------
+
+@model MK_API_Proc_MVC.Models.login
+
+@using CaptchaMvc.HtmlHelpers
+@using CaptchaMvc
+
+
+@{
+    ViewBag.Title = "login";
+}
+
+<script src="~/Scripts/jquery-3.4.1.js"></script>
+<script>
+    $(document).ready(function () {
+        $("button").click(function () {
+            alter("You want to Sucessfully login !!");
+        });
+    });
+</script>
+
+<h1 class="text-center"><b><u>Login Page</u></b></h1>
+<style>
+    .error {
+        color: #ff0000;
+    }
+
+    body {
+        background-image: url('../../Image/images (1).jpg');
+        background-size: 1500px 1000px;
+    }
+
+    .mkg {
+        border: 2px solid black;
+        width: 25%;
+        background-color: #6ff6ee;
+        }
+</style>
+<div class=" mkg center-block ">
+    @using (Html.BeginForm("login", "Home", FormMethod.Post))
+    {
+        <div class="form-group">
+            <h4><label>Email</label></h4>
+            @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "error" })
+            <h4 class="error">@TempData["Invalid Email"]</h4>
+        </div>
+
+        <div class="form-group">
+            <h4><label>Password</label></h4>
+            @Html.PasswordFor(m => m.Password, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Password, "", new { @class = "error" })
+            <h4 class="error">@TempData["Invalid Password"]</h4>
+        </div>
+
+        <div id="confirm_password" class="form-group">
+            <h4><label>ConfirmPassword</label></h4>
+            @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.ConfirmPassword, "", new { @class = "error" })
+        </div>
+
+        <center>
+            <div class="form-group">
+                @Html.MathCaptcha();
+                <p class="error">@TempData["Invalid Captcha"]</p>
+            </div>
+
+
+            <button class="btn btn-light" type="submit">Login</button>
+            <button1 class="btn btn-light" type="reset">Reset</button1>
+        </center>
+        <center>
+            <a class="btn btn-link" href="Home/Register">New Register</a>
+        </center>
+    }
+</div>
+
+//---------------------------Regestration Form--------------------
+
+@model MK_API_Proc_MVC.Models.login
+
+@{
+    ViewBag.Title = "Register";
+}
+
+
+
+<h1 class="text-center"><b><u>Register Page</u></b></h1>
+<style>
+    .error {
+        color: #ff0000;
+    }
+
+    body {
+        background-image: url('../../Image/images (1).jpg');
+        background-size: 1500px 1000px;
+    }
+
+    .mkg {
+        border: 2px solid black;
+        width: 25%;
+        background-color: #6ff6ee;
+    }
+</style>
+<div class=" mkg center-block ">
+    @using (Html.BeginForm("Register", "Home", FormMethod.Post))
+    {
+        <div class="form-group">
+            <h4><label>Name</label></h4>
+            @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Name, "", new { @class = "error" })
+            <h4 class="error">@TempData["Invalid Email"]</h4>
+        </div>
+
+        <div class="form-group">
+            <h4><label>Email</label></h4>
+            @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "error" })
+            <h4 class="error">@TempData["Invalid Email"]</h4>
+        </div>
+
+        <div class="form-group">
+            <h4><label>Password</label></h4>
+            @Html.PasswordFor(m => m.Password, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Password, "", new { @class = "error" })
+            <h4 class="error">@TempData["Invalid Password"]</h4>
+        </div>
+
+        <div id="confirm_password" class ="form-group">
+            <h4><label>ConfirmPassword</label></h4>
+            @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.ConfirmPassword, "", new { @class = "error" })
+        </div>
+
+            <center>
+                <button class="btn btn-success" type="submit">Register</button>
+                <button class="btn btn-danger" type="reset">Reset</button>
+            </center>
+            }
+        </div>
+
+
+//-----------------------Layout Page-------------------------------
+
+ <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Table", "Index", "Home")</li>
+                    <li>@Html.ActionLink("About", "About", "Home")</li>
+                    <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
+                    <li>@Html.ActionLink("Add New Employee", "AddEmp", "Home")</li>
+
+                    @if (Session["Email"] == null)
+                    {
+                        <li>@Html.ActionLink("Login", "Login", "Home")</li>
+                    }
+
+                    @if (Session["Email"] != null)
+                    {
+                        <li>@Html.ActionLink("LogOut", "LogOut", "Home")</li>
+                    }
+                </ul>
+                <h6 style="color:#ffffff">@Session["Email"]</h6>
+                <h6 style="color:#ffffff">@Session["Time"]</h6>
+            </div>
+
+//-------------------------Authentacation----------------------
+
+<system.web>
+	  <authentication mode="Forms">
+		  <forms loginUrl="~/Home/Login"></forms>
+	  </authentication>
+    <compilation debug="true" targetFramework="4.7.2" />
+    <httpRuntime targetFramework="4.7.2" />
+  </system.web>
+
+
+

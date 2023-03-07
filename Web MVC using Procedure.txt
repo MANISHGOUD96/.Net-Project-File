@@ -1,0 +1,669 @@
+//------------------------Data Base------------------------------
+
+//-----------------------------Sql Table---------------------------------
+
+create database APISTRO
+use APISTRO
+--------Employee Adress Table--------
+
+Create table Emp_Adress(
+AdressId int primary key identity(200,1)
+,AdressCode varchar(10),
+Building varchar(40),
+ZipCode varchar(10)
+)s
+
+
+insert into Emp_Adress values('16','Barawa-164','274152')
+insert into Emp_Adress values('21','Belwa-84','274145')
+insert into Emp_Adress values('52','Mundra-83','274214')
+insert into Emp_Adress values('45','Laheni-54','265412')
+
+select * from Emp_Adress 
+
+--------Employee Department Table--------
+
+create table MasterDept(
+DepMId int primary key,
+DepCode varchar(20),
+DepName varchar(20)
+)
+
+insert into MasterDept values(300,'.Net-01','Development')
+insert into MasterDept values(301,'PHP-11','Development')
+insert into MasterDept values(302,'HTML/CSS 12','Front')
+insert into MasterDept values(303,'IOS','ios Development')
+
+select * from MasterDept
+
+--------Employee Datiles Table--------
+
+create table newEmp(
+Id int primary key,
+Name varchar(50),
+AdressId int foreign key references Emp_Adress(AdressId),
+Email varchar(20),
+MobileNo varchar(12),
+DepMId int foreign key references MasterDept(DepMId)
+)
+
+insert into newEmp(Id,Name,Email,MobileNo,DepMId) values
+(100,'Manish Kumar Goud','manisher@gmail.com','8545674125',300)
+insert into newEmp(Id,Name,Email,MobileNo,DepMId) values
+(101,'Abhishek Singh','singabhi@gmail.com','8451236544',301)
+insert into newEmp(Id,Name,Email,MobileNo,DepMId) values
+(102,'Narendra Kumar','narendra@gmail.com','7658458963',302)
+insert into newEmp(Id,Name,Email,MobileNo,DepMId) values
+(103,'Shubham Gupta','shubham@gmail.com','8654213542',303)
+
+update newEmp set AdressId=200 where Id=100;
+update newEmp set AdressId=201 where Id=101;
+update newEmp set AdressId=202 where Id=102;
+update newEmp set AdressId=203 where Id=103;
+
+drop table newEmp
+
+select * from newEmp 
+select * from Emp_Adress 
+select * from MasterDept
+
+--------Procedure for Read All Data--------
+
+create proc GetAllDataa
+as
+begin
+select E.Id,E.Name,E.Email,E.MobileNo,A.AdressId,A.AdressCode,A.Building,A.ZipCode,D.DepMId,D.DepCode,D.DepName
+from newEmp as E JOIN 
+Emp_Adress as A ON A.AdressId=E.AdressId
+JOIN
+MasterDept as D ON D.DepMId=E.DepMId
+end
+
+exec GetAllDataa
+
+--------Procedure for InsertValue--------
+
+ create proc InsertValue(@AdressCode varchar(10),@Building varchar(40),@ZipCode varchar(10),
+@Id int ,@Name varchar(50) ,@Email varchar(20),@MobileNo varchar(12),@DepCode varchar(20))
+as
+begin
+declare @AId int
+declare @MId int
+Insert into Emp_Adress (AdressCode,Building,ZipCode)values(@AdressCode,@Building,@ZipCode)
+select top(1) @AId=AdressId from Emp_Adress order by AdressId desc 
+select @MId=DepMId from MasterDept where DepCode=@DepCode
+Insert into newEmp (Id,Name,AdressId,Email,MobileNo,DepMId) values(@Id,@Name,@AId,@Email,@MobileNo,@MId)
+end
+
+exec InsertValue '15','RN-45','4524',107,'sss','s@gmail.com','3454','.Net-01'
+
+--------Procedure for DeleteData--------
+
+create proc DeleteData(@Id int)
+as
+begin
+declare @AId int
+select @AId=AdressId from newEmp where Id=@Id; 
+delete newEmp where Id=@Id
+delete Emp_Adress where AdressId=@AId
+end
+
+exec DeleteData 107
+
+------Get AllData WithId---------
+create Proc GetDataThrowId(@Id int)
+as
+begin
+select E.Id,E.Name,E.Email,E.MobileNo,A.AdressId,A.AdressCode,A.Building,A.ZipCode,D.DepMId,D.DepCode,D.DepName
+from newEmp as E JOIN 
+Emp_Adress as A ON A.AdressId=E.AdressId
+JOIN
+MasterDept as D ON D.DepMId=E.DepMId
+where E.Id=@Id order by E.Id
+end
+
+ exec GetDataThrowId 100
+--------Procedure for UpdateData--------
+
+alter proc updatedata(@Id int,@Name Varchar(50),@Email varchar(30),@MobileNo varchar(12),
+@AdressCode varchar(20),@Building varchar(20),@ZipCode varchar(20),
+@DepMId int, @DepCode varchar(20),@DepName varchar(20))
+as 
+begin
+declare @Addid int
+select @Addid=AdressId from newEmp where Id=@Id
+update newEmp set Name=@Name,Email=@Email,MobileNo=@MobileNo where Id=@Id
+update Emp_Adress set AdressCode=@AdressCode,Building=@Building,ZipCode=@ZipCode where AdressId=@Addid
+update MasterDept set  DepCode=@DepCode,DepName=@DepName where DepMId=@DepMId
+end
+
+exec updatedata 101,'Rohan','Rohan@gmail.com','2222354650','10','Sishva-85','452135',300,'Jmbrin','Backend'
+
+--Logien Table--
+Create table login(Id int identity(1,1) primary key,Name varchar(50),Email varchar(50),Password varchar(50))
+insert into login values('Manish Kumar Goud','manish@gmail.com','Manish@123');
+insert into login values('Sangam Singh','sangam@gmail.com','Sangam@123');
+insert into login values('Rohan Gupta','dohan@gmail.com','Rohan@123');
+insert into login values('Devid','devid@gmai.com','Devid@123');
+
+select * from login
+
+create proc userlogien(@Email varchar(50),@Password varchar(50))
+as
+begin
+select Email,Password from login where Email=@Email and Password=@Password
+end
+userlogien 'manish@gmail.com','Manish@123'
+
+create proc insertloginval(@Name varchar(50),@Email varchar(50),@Password varchar(20))
+as
+begin
+insert into login (Name,Email,Password)values(@Name,@Email,@Password)
+end
+
+exec insertloginval 'Satish Goud','satish@gmail.com','Satish@123'
+
+//------------------------------------------------------------------------------MVC-------------------------------------------------
+//-----------------------------Model-------------------------
+//---------------------------Emp Model-----------------------
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace MK.StordProcedureMVC.Models
+{
+    public class EmpModles
+    {
+        [Required]
+        public int? EmpId { get; set; }
+        [Required]
+        public string Name { get; set; }
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+        [Required ]
+        [MinLength(10)]
+        [MaxLength(10)]
+        public string Phone { get; set; }
+        [Required]
+        public int? PinCode { get; set; }
+        [Required]
+        public string District { get; set; }
+        [Required]
+        public string DepCode { get; set; }
+        [Required]
+        public string DepName { get; set; }
+        [Required]
+
+        public int? AdressId { get; set; }
+        [Required]
+        public int? DeptId { get; set; }
+        [Required]
+        public string Village { get; set; }
+        [Required]
+        public string BuildingNo { get; set; } 
+    }
+}
+
+//---------------------------Login Model-----------------------
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace MK.StordProcedureMVC.Models
+{
+    public class LogienModel
+    {
+        public int? Id { get; set; }
+        public string Name { get; set; } 
+        [Required]
+        [EmailAddress]
+
+        public string Email { get; set; }
+        [Required]
+        
+        public string Password { get; set; }
+    }
+}
+
+//-----------------------------Controller----------------------
+
+using MK.StordProcedureMVC.DB_Connection;
+using MK.StordProcedureMVC.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+using System.Web.Security;
+
+namespace MK.StordProcedureMVC.Controllers
+{
+    [Authorize]
+    [RoutePrefix("Manish")]
+    public class HomeController : Controller
+    {
+        //------------Read the value from Table-------------------
+
+        public ActionResult Index()
+        {
+            emEntities DB = new emEntities();
+
+            //First Approach
+            //var resdata = DB.GetAllData().ToList();
+            //Second Approach
+            //var resdata = DB.Database.SqlQuery<EmpModles>("exec GetAllData").ToList();
+            //Third Approach
+
+            var resdata = DB.Database.SqlQuery<EmpModles>("GetAllData").ToList();
+            return View(resdata);
+        }
+        //---------------Insert the value in table---------------------
+        [HttpGet]
+     
+        public ActionResult Insert()
+        {
+            return View();
+        }
+
+        
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Insert(EmpModles obj)
+        {
+            emEntities DB = new emEntities();
+            DB.Insertvalue(obj.EmpId, obj.Name, obj.Email, obj.Phone, obj.AdressId, obj.DeptId, obj.Village, obj.PinCode, obj.BuildingNo, obj.District, obj.DepCode,obj.DepName);
+
+            return RedirectToAction("Index");
+        }
+
+        //-----------------Delete table---------------------
+        public ActionResult Delete(int EmpId,  int adressId, int deptId)
+        
+        {
+            emEntities DB = new emEntities();
+            DB.DeletTable(EmpId, adressId, deptId);
+            DB.SaveChanges();
+            return RedirectToAction("Index");
+        }
+
+        //--------------------Edit Table----------------------
+        [HttpGet]
+        public ActionResult Edit(int EmpId)
+        {
+            emEntities DB = new emEntities();
+
+            var update = DB.GetAllDataWithId(EmpId).ToList();
+            return View(update[0]);
+          }
+
+        [HttpPost]
+        public ActionResult Edit(EmpModles obj)
+        {
+          emEntities DB = new emEntities();           
+          DB.UpdateTable(obj.EmpId, obj.Name, obj.Email, obj.Phone, obj.AdressId, obj.Village, obj.PinCode, obj.BuildingNo, obj.District, obj.DeptId, obj.DepCode, obj.DepName);
+            DB.SaveChanges();
+            return RedirectToAction("Index");
+        }
+        //--------------------Login Page-----------------
+
+       [AllowAnonymous]
+        [HttpGet]
+        public ActionResult logien()
+        {
+            return View();
+        }
+
+       [AllowAnonymous]
+        [HttpPost]
+        public ActionResult logien(LogienModel obj)
+        {
+            emEntities DB = new emEntities();
+            var rev = DB.logiens.Where(a => a.Email == obj.Email).FirstOrDefault();
+            if (rev == null)
+            {
+                TempData["Ivalid"] = "Inavalid Email Id.........";
+            }
+            else
+            {     
+                if(rev.Email==obj.Email && rev.Password == obj.Password)
+                {
+                    Session["Email"] = rev.Email;
+                    FormsAuthentication.SetAuthCookie(rev.Email, false);
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    TempData["InvalidPass"]= "Enter your correct Password.......";
+                }
+            }
+            return View();
+        }
+        //--------------------LogOut Page-----------------
+        public ActionResult LogOut()
+        {
+           FormsAuthentication.SignOut();
+            Session.Clear();
+           return RedirectToAction("Logien");
+        }
+
+        [Route("Abhi")]
+        public ActionResult About()
+        {
+            ViewBag.Message = "Your application description page.";
+
+            return View();
+        }
+
+        [Route("Mkg/Hi/Chetu")]
+
+        public ActionResult Contact()
+        {
+            ViewBag.Message = "Your contact page.";
+
+            return View();
+        }
+    }
+}
+
+//-------------------------------------View------------------------------------
+//--------------------------------Read Table Value-----------------------------
+
+@model List<MK.StordProcedureMVC.Models.EmpModles>
+
+@{
+    ViewBag.Title = "Home Page";
+}
+
+<h1>Emp All Data</h1>
+<table class="table table-bordered table-hover table-responsive">
+    <tr>
+        <th>EmpId</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>AdressId</th>
+        <th>Destrict</th>
+        <th>PinCode</th>
+        <th>DepId</th>
+        <th>DepCode</th>
+        <th>DepName</th>
+        <th>Edit</th>
+        <th>Delete</th>
+    </tr>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.EmpId</td>
+            <td>@item.Name</td>
+            <td>@item.Email</td>
+            <td>@item.Phone</td>
+            <td>@item.AdressId</td>
+            <td>@item.PinCode</td>
+            <td>@item.District</td>
+            <td>@item.DeptId</td>
+            <td>@item.DepCode</td>
+            <td>@item.DepName</td>
+            <td><a class="btn btn-warning " href="@Url.Action("Edit","Home",new { @item.EmpId} )">Edit</a></td>
+            <td><a class="btn btn-danger" href="@Url.Action("Delete","Home",new {item.EmpId,item.AdressId,item.DeptId})">Delete</a></td>
+        </tr>
+    }
+</table>
+
+//---------------------------------Add Employee---------------------------
+
+@model MK.StordProcedureMVC.Models.EmpModles
+
+@{
+    ViewBag.Title = "Insert";
+}
+
+<h2>Insert</h2>
+<style>
+    .error{
+        color:#ff0000;
+    }
+</style>
+
+@using (Html.BeginForm("Insert", "Home", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <div class="form-group">
+        <label>EmpId</label>
+        @Html.TextBoxFor(m => m.EmpId, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m=>m.EmpId,"", new {@class="error"})
+    </div>
+
+    <div class="form-group">
+        <label>Name</label>
+        @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>Email</label>
+        @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Email, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>Phone</label>
+        @Html.TextBoxFor(m => m.Phone, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Phone, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>AdressId</label>
+        @Html.TextBoxFor(m => m.AdressId, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.AdressId, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>DepId</label>
+        @Html.TextBoxFor(m => m.DeptId, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.DeptId, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>Village</label>
+        @Html.TextBoxFor(m => m.Village, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Village, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>PinCode</label>
+        @Html.TextBoxFor(m => m.PinCode, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.PinCode, "", new { @class = "error" })
+    </div>
+    <div class=" form-group">
+        <label>Building No</label>
+        @Html.TextBoxFor(m => m.BuildingNo, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.BuildingNo, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>Destrict</label>
+        @Html.TextBoxFor(m => m.District, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.District, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>DepCode</label>
+        @Html.TextBoxFor(m => m.DepCode, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.DepCode, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>DepName</label>
+        @Html.TextBoxFor(m => m.DepName, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.EmpId, "", new { @class = "error" })
+    </div>
+
+    <button class="btn btn-primary" type="submit">Submit</button>
+}
+
+
+//-------------------------------------------Edit Employee----------------------------
+
+
+@model MK.StordProcedureMVC.DB_Connection.GetAllDataWithId_Result
+
+@{
+    ViewBag.Title = "Edit";
+}
+
+<h2>Insert</h2>
+<style>
+    .error {
+        color: #ff0000;
+    }
+</style>
+
+@using (Html.BeginForm("Edit", "Home", FormMethod.Post))
+{
+
+   
+    <div class="form-group">
+        <label>EmpId</label>
+        @Html.TextBoxFor(m => m.EmpId, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.EmpId, "", new { @class = "error" })
+    </div>
+
+    <div class="form-group">
+        <label>Name</label>
+        @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>Email</label>
+        @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Email, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>Phone</label>
+        @Html.TextBoxFor(m => m.Phone, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Phone, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>AdressId</label>
+        @Html.TextBoxFor(m => m.AdressId, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.AdressId, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>DepId</label>
+        @Html.TextBoxFor(m => m.DeptId, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.DeptId, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>Village</label>
+        @Html.TextBoxFor(m => m.Village, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Village, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>PinCode</label>
+        @Html.TextBoxFor(m => m.PinCode, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.PinCode, "", new { @class = "error" })
+    </div>
+    <div class=" form-group">
+        <label>Building No</label>
+        @Html.TextBoxFor(m => m.BuildingNo, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.BuildingNo, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>Destrict</label>
+        @Html.TextBoxFor(m => m.District, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.District, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>DepCode</label>
+        @Html.TextBoxFor(m => m.DepCode, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.DepCode, "", new { @class = "error" })
+    </div>
+
+    <div class=" form-group">
+        <label>DepName</label>
+        @Html.TextBoxFor(m => m.DepName, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.EmpId, "", new { @class = "error" })
+    </div>
+
+    <button class="btn btn-primary" type="submit">Submit</button>
+}
+
+
+//--------------------------Login------------------------------------
+
+
+@model MK.StordProcedureMVC.Models.LogienModel
+@{
+    ViewBag.Title = "Logien";
+}
+
+<h2>Employee Logien</h2>
+<style>
+    .error{
+        color:#ff0000;
+    }
+</style>
+
+@using (@Html.BeginForm("logien", "Home", FormMethod.Post))
+{
+    <div class="form-group">
+        <h4><label>Name</label></h4>
+        @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m=>m.Email,"",new {@class="error"})
+        <h4 class="error">@TempData["Ivalid"]</h4>
+    </div>
+
+    <div class="form-group">
+        <h4><label>Password</label></h4>
+        @Html.PasswordFor(m => m.Password, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Password, "", new {@class="error"})
+        <h4 class="error">@TempData["InvalidPass"]</h4>
+    </div>
+
+    <button class="btn btn-danger" type="reset">Reset</button>
+    <button class="btn btn-success" type="submit">Logien</button>
+}
+
+//--------------------------------Layout Page------------------
+
+<div class="navbar-collapse collapse">
+    <ul class="nav navbar-nav">
+        <li>@Html.ActionLink("Table", "Index", "Home")</li>
+        <li>@Html.ActionLink("About", "About", "Home")</li>
+        <li>@Html.ActionLink("Contact-Us", "Contact", "Home")</li>
+        <li>@Html.ActionLink("AddEmpDatils", "Insert", "Home")</li>
+        @if (Session["Email"] == null)
+        {
+            <li>@Html.ActionLink("Logien", "Logien", "Home")</li>
+        }
+
+        @if (Session["Email"] != null)
+        {
+            <li>@Html.ActionLink("LogOut", "LogOut", "Home")</li>
+        }
+    </ul>
+    <h6 style="color:#ffffff">@Session["Email"]</h6>
+</div>
+
+//--------------------------Web Config--------------------------
+
+<system.web>
+	  <authentication mode="Forms">
+		  <forms loginUrl="~/Home/Logien"></forms>
+	  </authentication>
+</system.web>

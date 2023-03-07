@@ -1,0 +1,355 @@
+//......................Controller......................
+
+using ProjectRevision1.DB_Connection;
+using ProjectRevision1.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+using System.Web.Security;
+
+namespace ProjectRevision1.Controllers
+{
+ [Authorize]  
+    public class HomeController : Controller
+    {
+
+        //----------------Read Data from table------------------
+        public ActionResult Index()
+        {
+            REVEntities2 DB = new REVEntities2();
+            var Manish = DB.Employees.ToList();
+            List<EmpModel> obj1 = new List<EmpModel>();
+            foreach (var item in Manish)
+            {
+                obj1.Add(new EmpModel()
+                {
+                    Id = item.Id,
+                    Name = item.Name,
+                    Age = item.Age,
+                    Adress = item.Adress,
+                    Company = item.Company,
+                    Salary = item.Salary,
+                    Email = item.Email,
+                    Phone = item.Phone,
+                    Addhar = item.Addhar
+                }); 
+
+            }
+            return View(obj1);
+        }
+    
+//-------------Delete Operation--------------------
+        public ActionResult Delete(int Id)
+        {
+            REVEntities2 DB = new REVEntities2();
+            var deletitem = DB.Employees.Where(a => a.Id == Id).First();
+            DB.Employees.Remove(deletitem);
+            DB.SaveChanges();
+            return RedirectToAction("Index");
+        }
+//--------------Add New Data in Table----------------
+        [HttpGet]
+        public ActionResult Emp()
+        {
+            return View();
+        }
+
+        [HttpPost]
+
+        public ActionResult Emp(EmpModel obj)
+          {
+            REVEntities2 DB = new REVEntities2();
+            Employee obje = new Employee();
+            obje.Id = obj.Id;
+            obje.Name = obj.Name;
+            obje.Age = obj.Age;
+            obje.Adress = obj.Adress;
+            obje.Company = obj.Company;
+            obje.Salary = obj.Salary;
+            obje.Email = obj.Email;
+            obje.Phone = obj.Phone;
+            obje.Addhar = obj.Addhar;
+
+            if (obj.Id == 0)
+            {
+                DB.Employees.Add(obje);
+                DB.SaveChanges();
+            }
+            else
+            {
+                DB.Entry(obje).State = System.Data.Entity.EntityState.Modified;
+                DB.SaveChanges();
+            }
+            return RedirectToAction("Index");
+        }
+//-------------------Edit Operation------------------------
+        public ActionResult Edit(int Id)
+        {
+            REVEntities2 DB = new REVEntities2();
+            var edit = DB.Employees.Where(a => a.Id == Id).First();
+            EmpModel obj = new EmpModel();
+
+            obj.Id = edit.Id;
+            obj.Name = edit.Name;
+            obj.Age = edit.Age;
+            obj.Adress = edit.Adress;
+            obj.Company = edit.Company;
+            obj.Salary = edit.Salary;
+            obj.Email = edit.Email;
+            obj.Phone= edit.Phone;
+            obj.Addhar = edit.Addhar;
+            
+            return View("Emp",obj);
+        }
+        //---------------Logien Page-------------------------
+        [AllowAnonymous]
+        [HttpGet] 
+        public ActionResult Logien()
+        {
+            return View();
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        
+        public ActionResult Logien(LogienModel obj)
+        {
+            REVEntities2 DB = new REVEntities2();
+            var res = DB.emplogiens.Where(a => a.Email == obj.Email).FirstOrDefault();
+            if (res == null)
+            {
+                TempData["Invalid"] = "Email is Not found..!";
+            }
+            else
+            {
+                if(res.Email==obj.Email && res.password == obj.password)
+                {
+                    Session["UserEmail"] = res.Email;
+                    Session["UserName"] = res.Name; 
+
+                    FormsAuthentication.SetAuthCookie(res.Email, false);
+
+                    return RedirectToAction("Index");
+                }
+
+                else
+                {
+                    TempData["InvalidPassword"] = "Invalid Password......!";
+                }
+            }
+            return View();
+        }
+
+        //---------------Logout Page-------------------------
+        public ActionResult LogOut()
+        {
+
+            FormsAuthentication.SignOut();
+            Session.Clear();
+            return RedirectToAction("Logien");
+        }
+
+        //---------------About Page-------------------------
+        public ActionResult About()
+        {
+            ViewBag.Message = "Your application description page.";
+
+            return View();
+        }
+        //---------------Contact Page-------------------------
+        public ActionResult Contact()
+        {
+
+            ViewBag.Message = "Your contact page.";
+            return View();
+        }
+    }
+}
+
+//..............................Employee(model)..............................
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace ProjectRevision1.Models
+{
+    public class EmpModel
+    {
+        public int Id { get; set; }
+        [Required(ErrorMessage = "Pllzzzz Enter Your Name......")]
+        public string Name { get; set; }
+        [Required]
+        public double? Age { get; set; }
+        [Required]
+        public string Adress { get; set; }
+        public string Company { get; set; }
+        public double? Salary { get; set; }
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+        [Required]
+        public string Phone { get; set; }
+        [Required]
+        public string Addhar { get; set; }
+    }
+}
+
+//..............................Login(model)..............................
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace ProjectRevision1.Models
+{
+    public class LogienModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+        [Required]
+        public string password { get; set; }
+    }
+}
+
+//........................View...............................
+
+//....................Employee(View).....................
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace ProjectRevision1.Models
+{
+    public class LogienModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+        [Required]
+        public string password { get; set; }
+    }
+}
+
+
+//....................Table(View).....................
+
+@model List<ProjectRevision1.Models.EmpModel>
+
+@{
+    ViewBag.Title = "Home Page";
+}
+<h1><u><b>Employee Details:-</b></u></h1>
+<style>
+    body {
+        background-image: url('../../Image/image7.jpg');
+        background-size: 1500px 1px;
+    }
+
+    .mkg {
+        border: 2px solid black;
+    }
+</style>
+
+<table class="table body table-bordered table-hover table-responsive bg-success mkg">
+    <tr class="bg-info ">
+        <th>Id</th>
+        <th>Name</th>
+        <th>Age</th>
+        <th>Adress</th>
+        <th>Company</th>
+        <th>Selary</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Addhar</th>
+        <th>Edit</th>
+        <th>Delete</th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr class="mkg">
+            <td>@item.Id</td>
+            <td>@item.Name</td>
+            <td>@item.Age</td>
+            <td>@item.Adress</td>
+            <td>@item.Company</td>
+            <td>@item.Salary</td>
+            <td>@item.Email</td>
+            <td>@item.Phone</td>
+            <td>@item.Addhar</td>
+            <td><a class="btn btn-primary" href="@Url.Action("Edit","Home",new {item.Id})">Edit</a></td>
+            <td><a class="btn btn-danger" href="@Url.Action("Delete","Home",new{item.Id})">Delete</a></td>
+        </tr>
+    }
+
+</table>
+
+<center>
+    <a class="btn btn-warning" href="Emp" role="button">Add New Employee</a>
+    <a class="btn btn-primary" href="About" role="button">Next Page</a>
+</center>
+
+//....................Logins(View).....................
+
+
+@model ProjectRevision1.Models.LogienModel
+@{
+    ViewBag.Title = "Logien";
+}
+
+<h1 class="text-center"><b><u>Login Page</u></b></h1>
+<style>
+    .error {
+        color: #ff0000;
+    }
+
+    body {
+        background-image: url('../../Image/image7.jpg');
+        background-size: 1500px 1px;
+    }
+
+    .mkg {
+        border: 2px solid black;
+        width: 25%;
+    }
+</style>
+<div class=" mkg center-block">
+    @using (Html.BeginForm("Logien", "Home", FormMethod.Post))
+    {
+
+        <div class="form-group">
+            <h4><label>Enter Your Email</label></h4>
+            @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "error" })
+            <p class="error">@TempData["Invalid"]</p>
+        </div>
+
+        <div class="form-group">
+            <h4><label>Enter Password</label></h4>
+            @Html.PasswordFor(m => m.password, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.password, "", new { @class = "error" })
+            <p class="error">@TempData["InvalidPassword"]</p>
+
+        </div>
+
+        <center>
+            <button class="btn btn-danger" type="reset">Reset</button>
+            <button class="btn btn-success" type="submit">Submit</button>
+        </center>
+    }
+</div>
+

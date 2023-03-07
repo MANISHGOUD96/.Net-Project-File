@@ -1,0 +1,334 @@
+
+//------------------------API Model----------------------
+
+using MK_web_API_Project.DB_Connection;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Web.Http;
+
+namespace MK_web_API_Project.Controllers
+{
+    public class EmpController : ApiController
+    {
+        
+        REVEntities DB = new REVEntities();
+
+        [HttpGet]
+        [Route("Api/GetEMPData")]
+        public List<Employee> GetData()                                                
+        {
+            var rev = DB.Employees.ToList();
+            return rev;
+        }
+         
+        [HttpPost]
+        [Route("Api/SaveData")]
+        
+        public HttpResponseMessage SaveEmp(Employee obj)
+        {
+            if (obj.Id == 0)
+            {
+                DB.Employees.Add(obj);
+                DB.SaveChanges();
+            }
+            else
+            {
+                DB.Entry(obj).State = System.Data.Entity.EntityState.Modified;
+                DB.SaveChanges();
+            }
+            HttpResponseMessage res = new HttpResponseMessage(HttpStatusCode.OK);
+            return res;
+        }
+        
+
+        [HttpGet]
+        [Route("Api/EditData")]
+
+        public Employee GetEditData(int Id)
+        {
+            var resedit = DB.Employees.Where(a => a.Id == Id).First();
+            return resedit;
+        }
+
+        [HttpGet]
+        [Route("Api/DeleteData")]
+
+        public HttpResponseMessage DeleteData(int Id)
+        {
+            var delete = DB.Employees.Where(a => a.Id == Id).First();
+            DB.Employees.Remove(delete);
+            DB.SaveChanges();
+            HttpResponseMessage res = new HttpResponseMessage(HttpStatusCode.OK);
+            return res;
+        }
+
+        [HttpPost]
+        [Route("Api/DateTime")]
+        public HttpResponseMessage GetDateTime(string datval)
+        {
+            DateTime dt = new DateTime();
+            var datvalue = datval;
+            HttpResponseMessage res = new HttpResponseMessage(HttpStatusCode.OK);
+            return res;
+        }
+
+    }
+}
+
+
+//---------------------------API Model------------------------
+
+namespace MK_web_API_Project.DB_Connection
+{
+    using System;
+    using System.Collections.Generic;
+    
+    public partial class Employee
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public Nullable<double> Age { get; set; }
+        public string Adress { get; set; }
+        public string Company { get; set; }
+        public Nullable<double> Salary { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
+        public string Addhar { get; set; }
+    }
+}
+
+//---------------------------MVC Controller------------------------
+using MK_API_WebMVC.Models;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Web;
+using System.Web.Mvc;
+
+namespace MK_API_WebMVC.Controllers
+{
+    public class HomeController : Controller
+    {
+        //---------------Read the table Data---------------------
+        public ActionResult Index()
+        {
+            
+          //...........1st step...........
+            HttpClient client = new HttpClient();
+
+            //...........2nd step...........
+            var data =client.GetAsync("http://localhost:62369/Api/GetEMPData").Result;
+
+            //...........3rd step...........
+            var readdata = data.Content.ReadAsStringAsync().Result;
+
+            //.....4th Convert JSON to Class.......... 
+            var empres=JsonConvert.DeserializeObject<List<EmpModel>>(readdata);
+
+            return View(empres);
+        }
+
+        //---------------Add Data in Table---------------------
+
+        [HttpGet]
+        public ActionResult AddEmp()
+        {
+
+            return View();
+        }
+
+        [HttpPost]
+        public ActionResult AddEmp(EmpModel obj)
+        {
+            TempData["Add"] = "Add New Employee";
+            //...........1st step...........
+            HttpClient client = new HttpClient();
+            var data = JsonConvert.SerializeObject(obj);
+            StringContent postdata = new StringContent(data, System.Text.Encoding.UTF8, "application/json");
+            var result = client.PostAsync("http://localhost:62369/Api/SaveData",postdata).Result;
+            return RedirectToAction("Index");
+        }
+
+        //---------------Delete Data from Table---------------------
+        public ActionResult Delete(int Id)
+        {
+            HttpClient client = new HttpClient();
+            var result = client.GetAsync("http://localhost:62369/Api/DeleteData" + "?Id=" + Id).Result;
+            return RedirectToAction("Index");
+        }
+
+        //---------------Edit Data from Table---------------------
+        public ActionResult Edit(int Id)
+        {
+            HttpClient client = new HttpClient();
+            var result = client.GetAsync("http://localhost:62369/Api/EditData" + "?Id=" + Id).Result;
+            var data = result.Content.ReadAsStringAsync().Result;
+            var objdata = JsonConvert.DeserializeObject<EmpModel>(data);
+            return View("AddEmp", objdata);
+        }
+        [HttpGet]
+        public ActionResult Date()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public ActionResult Date(EmpModel obj)
+        {
+            HttpClient client = new HttpClient();
+            var date = obj.Date;
+            var adddate = JsonConvert.SerializeObject(date);
+            StringContent postDate = new StringContent(adddate, System.Text.Encoding.UTF8, "application/json");
+            var result = client.PostAsync("http://localhost:62369/Api/DateTime?datval=" + date.ToString(), postDate).Result;
+            return View();
+        }
+
+
+        public ActionResult About()
+        {
+            ViewBag.Message = "Your application description page.";
+            return View();
+        }
+
+        public ActionResult Contact()
+        {
+            ViewBag.Message = "Your contact page.";
+            return View();
+        }
+    }
+}
+
+//---------------------------------MVC Model-----------------------------
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+
+namespace MK_API_WebMVC.Models
+{
+    public class EmpModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public double? Age { get; set; }
+        public string Adress { get; set; }
+        public string Company { get; set; }
+        public double? Salary { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
+        public string Addhar { get; set; }
+        public string Date{ get; set; }
+    }
+}
+
+//-------------------------------View (AddEmp)----------------------
+
+@model MK_API_WebMVC.Models.EmpModel
+@{
+    ViewBag.Title = "AddEmp";
+}
+
+<h1>Add Employee</h1>
+
+@using (Html.BeginForm("AddEmp", "Home", FormMethod.Post))
+{
+    @Html.HiddenFor(m=>m.Id)
+    <div class="form-group">
+        <h4><label>Name</label></h4>
+        @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
+    </div>
+
+    <div class="form-group">
+        <h4><label>Age</label></h4>
+        @Html.TextBoxFor(m => m.Age, new { @class = "form-control" })
+    </div>
+    <div class="form-group">
+        <h4><label>Adress</label></h4>
+        @Html.TextBoxFor(m => m.Adress, new { @class = "form-control" })
+    </div>
+    <div class="form-group">
+        <h4><label>Company</label></h4>
+        @Html.TextBoxFor(m => m.Company, new { @class = "form-control" })
+    </div>
+    <div class="form-group">
+        <h4><label>Salary</label></h4>
+        @Html.TextBoxFor(m => m.Salary, new { @class = "form-control" })
+    </div>
+    <div class="form-group">
+        <h4><label>Email</label></h4>
+        @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+    </div>
+    <div class="form-group">
+        <h4><label>Phone</label></h4>
+        @Html.TextBoxFor(m => m.Phone, new { @class = "form-control" })
+    </div>
+    <div class="form-group">
+        <h4><label>Addhar</label></h4>
+        @Html.TextBoxFor(m => m.Addhar, new { @class = "form-control" })
+    </div>
+
+    <button class="btn btn-success" type="submit">Submit</button>
+    <button class="btn btn-danger" type="reset">Reset</button>
+}
+
+//-------------------------------View (Table)----------------------
+
+
+@model List<MK_API_WebMVC.Models.EmpModel>
+
+@{
+    ViewBag.Title = "Home Page";
+}
+
+<h1><b>Emp Table</b></h1>
+<style>
+    body {
+        background-image: url('../../Image/image2.jpeg');
+        background-size: 1550Px 700Px
+    }
+
+    .mk {
+        border: 2px solid Skyblue;
+    }
+</style>
+
+<table class="table table-bordered table-hover table-responsive bg-success mk">
+    <tr class="bg-info">
+        <th>Id</th>
+        <th>Name</th>
+        <th>Age</th>
+        <th>Adress</th>
+        <th>Company</th>
+        <th>Salary</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Addhar</th>
+        <th>Edit</th>
+        <th>Delete</th>
+    </tr>
+    @for (int i = 1; i < Model.Count; i++)
+    {
+        <tr class="mk">
+            <td>@Model[i].Id</td>
+            <td>@Model[i].Name</td>
+            <td>@Model[i].Age</td>
+            <td>@Model[i].Adress</td>
+            <td>@Model[i].Company</td>
+            <td>@Model[i].Salary</td>
+            <td>@Model[i].Email</td>
+            <td>@Model[i].Phone</td>
+            <td>@Model[i].Addhar</td>
+            <td><a class="btn btn-primary" href="@Url.Action("Edit","Home",new {Model[i].Id})">Edit</a></td>
+            <td><a class="btn btn-danger" href="@Url.Action("Delete","Home",new {Model[i].Id})">Delete</a></td>
+        </tr>
+    }
+</table>
+<a class="btn btn-primary" href="AddEmp" role="button">Add New Employee</a>
+
+
